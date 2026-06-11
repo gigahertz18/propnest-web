@@ -125,13 +125,13 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label>Role</Label>
+          <Label htmlFor="role">Role</Label>
           <Select
             value={role}
             onValueChange={(v) => setRole(v as UserRole)}
             disabled={loading}
           >
-            <SelectTrigger>
+            <SelectTrigger id="role" aria-label="Role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -145,13 +145,13 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label>Status</Label>
+          <Label htmlFor="status">Status</Label>
           <Select
             value={isActive ? "active" : "inactive"}
             onValueChange={(v) => setIsActive(v === "active")}
             disabled={loading}
           >
-            <SelectTrigger>
+            <SelectTrigger id="status" aria-label="Status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

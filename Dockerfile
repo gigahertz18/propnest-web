@@ -5,46 +5,48 @@ WORKDIR /app
 # ─── Development ──────────────────────────────────────────────────────────────
 FROM base AS dev
 
-# Install all dependencies including shadcn's requirements
 COPY package.json package-lock.json* ./
 RUN npm ci && \
-    npm install clsx class-variance-authority tailwindcss-animate lucide-react
+    npm install \
+      clsx \
+      class-variance-authority \
+      tailwindcss-animate \
+      lucide-react && \
+    npm install --save-dev \
+      jest \
+      jest-environment-jsdom \
+      @testing-library/react \
+      @testing-library/jest-dom \
+      @testing-library/user-event \
+      @types/jest
 
-# Copy entrypoint script into the image (not the source volume)
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 3000
-
-# entrypoint.sh runs shadcn on first start (if needed), then starts Next.js
+# Use shell entrypoint for dev server startup (shadcn init + npm run dev)
+# CMD here means `docker compose run frontend npx jest` cleanly overrides it
+# without having to fight an ENTRYPOINT — correct pattern for CI compatibility
 ENTRYPOINT ["/entrypoint.sh"]
+CMD []
 
 # ─── Builder ──────────────────────────────────────────────────────────────────
 FROM base AS builder
 
 COPY package.json package-lock.json* ./
 RUN npm ci && \
-    npm install clsx class-variance-authority tailwindcss-animate lucide-react
+    npm install \
+      clsx \
+      class-variance-authority \
+      tailwindcss-animate \
+      lucide-react
 
 COPY . .
 
-# In the builder stage there is no volume overlay so shadcn writes directly
-# into the image filesystem — this is correct for production builds.
 RUN npx shadcn@latest init --defaults -y && \
     npx shadcn@latest add --yes \
-      button \
-      input \
-      label \
-      select \
-      badge \
-      dialog \
-      table \
-      dropdown-menu \
-      avatar \
-      separator \
-      tooltip \
-      alert \
-      card
+      button input label select badge dialog table \
+      dropdown-menu avatar separator tooltip alert card
 
 RUN npm run build
 
