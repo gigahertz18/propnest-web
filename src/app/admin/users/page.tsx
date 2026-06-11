@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
-import { User, UserCreatePayload, UserUpdatePayload, ApiError } from "@/types"
+import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import { ApiError } from "@/types"
 import { usersApi } from "@/lib/api/users"
 import Modal from "@/components/ui/Modal"
 import UserForm from "@/components/ui/UserForm"
@@ -19,12 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 type ModalState =
   | { type: "closed" }
@@ -34,7 +30,9 @@ type ModalState =
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   })
 }
 
@@ -42,12 +40,12 @@ export default function AdminUsersPage() {
   const { user: currentUser, isAdmin, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const [users, setUsers]             = useState<User[]>([])
-  const [fetchError, setFetchError]   = useState<string | null>(null)
-  const [fetching, setFetching]       = useState(true)
-  const [modal, setModal]             = useState<ModalState>({ type: "closed" })
+  const [users, setUsers] = useState<User[]>([])
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [fetching, setFetching] = useState(true)
+  const [modal, setModal] = useState<ModalState>({ type: "closed" })
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [toast, setToast]             = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAdmin) router.replace("/dashboard")
@@ -71,6 +69,7 @@ export default function AdminUsersPage() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!authLoading && isAdmin) loadUsers()
   }, [authLoading, isAdmin, loadUsers])
 
@@ -108,26 +107,28 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-neutral-900 text-white
-                        text-sm px-4 py-3 rounded-xl shadow-lg">
+        <div className="fixed top-5 right-5 z-50 rounded-xl bg-neutral-900 px-4 py-3 text-sm text-white shadow-lg">
           {toast}
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-white border-b px-6 py-5">
-        <div className="max-w-5xl mx-auto space-y-3">
+      <div className="border-b bg-white px-6 py-5">
+        <div className="mx-auto max-w-5xl space-y-3">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm
-                       text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8l4-4" stroke="currentColor"
-                strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M10 12L6 8l4-4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             Back to dashboard
           </Link>
@@ -135,14 +136,13 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold">Users</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-muted-foreground mt-0.5 text-sm">
                 Manage who has access to PropNest
               </p>
             </div>
             <Button
               onClick={() => setModal({ type: "create" })}
-              className="bg-gradient-to-r from-[#E61E4D] via-[#E31C5F]
-                         to-[#D70466] hover:opacity-95"
+              className="bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] hover:opacity-95"
             >
               + Add user
             </Button>
@@ -151,13 +151,12 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-4">
-
+      <div className="mx-auto max-w-5xl space-y-4 px-6 py-6">
         {fetchError && (
           <Alert variant="destructive">
             <AlertDescription className="flex items-center justify-between">
               {fetchError}
-              <button onClick={loadUsers} className="underline underline-offset-2 ml-4">
+              <button onClick={loadUsers} className="ml-4 underline underline-offset-2">
                 Retry
               </button>
             </AlertDescription>
@@ -166,13 +165,13 @@ export default function AdminUsersPage() {
 
         {/* Loading skeleton */}
         {fetching && (
-          <div className="rounded-xl border bg-white overflow-hidden">
+          <div className="overflow-hidden rounded-xl border bg-white">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex gap-4 px-6 py-4 border-b last:border-0">
-                <div className="w-8 h-8 rounded-full bg-neutral-100 animate-pulse" />
+              <div key={i} className="flex gap-4 border-b px-6 py-4 last:border-0">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-neutral-100" />
                 <div className="flex-1 space-y-2 py-1">
-                  <div className="h-3 w-32 bg-neutral-100 rounded animate-pulse" />
-                  <div className="h-3 w-48 bg-neutral-50 rounded animate-pulse" />
+                  <div className="h-3 w-32 animate-pulse rounded bg-neutral-100" />
+                  <div className="h-3 w-48 animate-pulse rounded bg-neutral-50" />
                 </div>
               </div>
             ))}
@@ -181,18 +180,15 @@ export default function AdminUsersPage() {
 
         {/* Empty state */}
         {!fetching && !fetchError && users.length === 0 && (
-          <div className="rounded-xl border bg-white py-16 flex flex-col
-                          items-center text-center">
+          <div className="flex flex-col items-center rounded-xl border bg-white py-16 text-center">
             <p className="text-sm font-medium">No users yet</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Add the first user to get started.
-            </p>
+            <p className="text-muted-foreground mt-1 text-sm">Add the first user to get started.</p>
           </div>
         )}
 
         {/* Table */}
         {!fetching && users.length > 0 && (
-          <div className="rounded-xl border bg-white overflow-hidden">
+          <div className="overflow-hidden rounded-xl border bg-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -209,35 +205,34 @@ export default function AdminUsersPage() {
                   const isSelf = u.id === currentUser?.id
                   return (
                     <TableRow key={u.id}>
-
                       {/* User */}
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#EEEDFE] flex items-center
-                                          justify-center text-[#3C3489] text-xs font-semibold
-                                          flex-shrink-0">
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#EEEDFE] text-xs font-semibold text-[#3C3489]">
                             {u.full_name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <p className="text-sm font-medium">
                               {u.full_name}
                               {isSelf && (
-                                <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                                <span className="text-muted-foreground ml-1.5 text-xs font-normal">
                                   (you)
                                 </span>
                               )}
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              @{u.username}
-                            </p>
+                            <p className="text-muted-foreground text-xs">@{u.username}</p>
                           </div>
                         </div>
                       </TableCell>
 
                       <TableCell className="text-sm">{u.email}</TableCell>
-                      <TableCell><RoleBadge role={u.role} /></TableCell>
-                      <TableCell><StatusBadge active={u.is_active} /></TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell>
+                        <RoleBadge role={u.role} />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge active={u.is_active} />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
                         {formatDate(u.created_at)}
                       </TableCell>
 
@@ -251,9 +246,13 @@ export default function AdminUsersPage() {
                             aria-label={`Edit ${u.username}`}
                           >
                             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                              <path d="M10.5 2.5l2 2-8 8H2.5v-2l8-8z"
-                                stroke="currentColor" strokeWidth="1.3"
-                                strokeLinecap="round" strokeLinejoin="round"/>
+                              <path
+                                d="M10.5 2.5l2 2-8 8H2.5v-2l8-8z"
+                                stroke="currentColor"
+                                strokeWidth="1.3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           </Button>
                           <Button
@@ -261,26 +260,29 @@ export default function AdminUsersPage() {
                             size="icon"
                             onClick={() => !isSelf && setModal({ type: "delete", user: u })}
                             disabled={isSelf}
-                            className="hover:text-red-600 hover:bg-red-50"
+                            className="hover:bg-red-50 hover:text-red-600"
                             aria-label={`Delete ${u.username}`}
                           >
                             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                              <path d="M2.5 4.5h10M6 4.5V3h3v1.5M5.5 4.5v7h4v-7"
-                                stroke="currentColor" strokeWidth="1.3"
-                                strokeLinecap="round" strokeLinejoin="round"/>
+                              <path
+                                d="M2.5 4.5h10M6 4.5V3h3v1.5M5.5 4.5v7h4v-7"
+                                stroke="currentColor"
+                                strokeWidth="1.3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           </Button>
                         </div>
                       </TableCell>
-
                     </TableRow>
                   )
                 })}
               </TableBody>
             </Table>
 
-            <div className="px-6 py-3 border-t bg-neutral-50">
-              <p className="text-xs text-muted-foreground">
+            <div className="border-t bg-neutral-50 px-6 py-3">
+              <p className="text-muted-foreground text-xs">
                 {users.length} {users.length === 1 ? "user" : "users"}
               </p>
             </div>
@@ -294,19 +296,12 @@ export default function AdminUsersPage() {
         onClose={() => setModal({ type: "closed" })}
         title="Add user"
       >
-        <UserForm
-          onSubmit={handleCreate}
-          onCancel={() => setModal({ type: "closed" })}
-        />
+        <UserForm onSubmit={handleCreate} onCancel={() => setModal({ type: "closed" })} />
       </Modal>
 
       {/* Edit modal */}
       {modal.type === "edit" && (
-        <Modal
-          open
-          onClose={() => setModal({ type: "closed" })}
-          title="Edit user"
-        >
+        <Modal open onClose={() => setModal({ type: "closed" })} title="Edit user">
           <UserForm
             user={modal.user}
             onSubmit={handleEdit}
@@ -326,12 +321,10 @@ export default function AdminUsersPage() {
           </DialogHeader>
           {modal.type === "delete" && (
             <div className="space-y-5">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Are you sure you want to delete{" "}
-                <span className="font-semibold text-foreground">
-                  {modal.user.full_name}
-                </span>
-                ? This action cannot be undone.
+                <span className="text-foreground font-semibold">{modal.user.full_name}</span>? This
+                action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <Button
@@ -355,7 +348,6 @@ export default function AdminUsersPage() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   )
 }

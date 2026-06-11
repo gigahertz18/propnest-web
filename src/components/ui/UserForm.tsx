@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, FormEvent } from "react"
-import { User, UserCreatePayload, UserUpdatePayload, UserRole } from "@/types"
+import type { FormEvent } from "react";
+import { useState } from "react"
+import type { User, UserCreatePayload, UserUpdatePayload, UserRole } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,12 +28,12 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
 
   const [fullName, setFullName] = useState(user?.full_name ?? "")
   const [username, setUsername] = useState(user?.username ?? "")
-  const [email, setEmail]       = useState(user?.email ?? "")
+  const [email, setEmail] = useState(user?.email ?? "")
   const [password, setPassword] = useState("")
-  const [role, setRole]         = useState<UserRole>(user?.role ?? "user")
+  const [role, setRole] = useState<UserRole>(user?.role ?? "user")
   const [isActive, setIsActive] = useState(user?.is_active ?? true)
-  const [error, setError]       = useState<string | null>(null)
-  const [loading, setLoading]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -42,14 +43,21 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
       if (isEdit) {
         const payload: UserUpdatePayload = {}
         if (fullName !== user.full_name) payload.full_name = fullName
-        if (username !== user.username)   payload.username  = username
-        if (email    !== user.email)      payload.email     = email
-        if (role     !== user.role)       payload.role      = role
-        if (isActive !== user.is_active)  payload.is_active = isActive
-        if (password)                     payload.password  = password
+        if (username !== user.username) payload.username = username
+        if (email !== user.email) payload.email = email
+        if (role !== user.role) payload.role = role
+        if (isActive !== user.is_active) payload.is_active = isActive
+        if (password) payload.password = password
         await onSubmit(payload)
       } else {
-        await onSubmit({ full_name: fullName, username, email, password, role, is_active: isActive })
+        await onSubmit({
+          full_name: fullName,
+          username,
+          email,
+          password,
+          role,
+          is_active: isActive,
+        })
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong")
@@ -58,12 +66,10 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
     }
   }
 
-  const isSubmitDisabled =
-    loading || !fullName || !username || !email || (!isEdit && !password)
+  const isSubmitDisabled = loading || !fullName || !username || !email || (!isEdit && !password)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-
       <div className="space-y-1.5">
         <Label htmlFor="full_name">Full name</Label>
         <Input
@@ -106,7 +112,7 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         <Label htmlFor="password">
           {isEdit ? "New password" : "Password"}
           {isEdit && (
-            <span className="ml-1 text-muted-foreground font-normal text-xs">
+            <span className="text-muted-foreground ml-1 text-xs font-normal">
               (leave blank to keep current)
             </span>
           )}
@@ -126,11 +132,7 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="role">Role</Label>
-          <Select
-            value={role}
-            onValueChange={(v) => setRole(v as UserRole)}
-            disabled={loading}
-          >
+          <Select value={role} onValueChange={(v) => setRole(v as UserRole)} disabled={loading}>
             <SelectTrigger id="role" aria-label="Role">
               <SelectValue />
             </SelectTrigger>
@@ -180,16 +182,12 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         </Button>
         <Button
           type="submit"
-          className="flex-1 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F]
-                     to-[#D70466] hover:opacity-95"
+          className="flex-1 bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] hover:opacity-95"
           disabled={isSubmitDisabled}
         >
-          {loading
-            ? isEdit ? "Saving…" : "Creating…"
-            : isEdit ? "Save changes" : "Create user"}
+          {loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save changes" : "Create user"}
         </Button>
       </div>
-
     </form>
   )
 }

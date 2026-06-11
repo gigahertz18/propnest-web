@@ -1,7 +1,5 @@
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-import { Tracing } from "node:trace_events"
-
 export type UserRole = "admin" | "manager" | "user"
 
 export interface CurrentUser {

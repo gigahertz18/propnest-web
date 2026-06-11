@@ -3,7 +3,8 @@
  * DELETE /api/users/[id]  — delete a user (admin only)
  */
 
-import { NextRequest, NextResponse } from "next/server"
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server"
 import { getToken } from "@/lib/auth/session"
 import { backendUpdateUser, backendDeleteUser } from "@/lib/api/usersBackend"
 import { ApiError } from "@/types"
@@ -20,10 +21,7 @@ function handleError(err: unknown) {
   return NextResponse.json({ detail: "An unexpected error occurred" }, { status: 500 })
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken()
   if (!token) return unauthorized()
 
@@ -37,10 +35,7 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken()
   if (!token) return unauthorized()
 

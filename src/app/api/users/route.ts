@@ -3,7 +3,8 @@
  * POST /api/users  — create a user (admin only)
  */
 
-import { NextRequest, NextResponse } from "next/server"
+import type { NextRequest} from "next/server";
+import { NextResponse } from "next/server"
 import { getToken } from "@/lib/auth/session"
 import { backendListUsers, backendCreateUser } from "@/lib/api/usersBackend"
 import { ApiError } from "@/types"

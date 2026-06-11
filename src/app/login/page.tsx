@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, FormEvent } from "react"
+import type { FormEvent } from "react";
+import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/types"
@@ -15,9 +16,9 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
 
   const [identifier, setIdentifier] = useState("")
-  const [password, setPassword]     = useState("")
-  const [error, setError]           = useState<string | null>(null)
-  const [loading, setLoading]       = useState(false)
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -28,7 +29,9 @@ export default function LoginPage() {
     } catch (err) {
       setError(
         err instanceof ApiError
-          ? err.status === 401 ? "Invalid username or password." : err.detail
+          ? err.status === 401
+            ? "Invalid username or password."
+            : err.detail
           : "Something went wrong. Please try again."
       )
     } finally {
@@ -37,29 +40,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center bg-white px-4">
       <div className="w-full max-w-sm space-y-6">
-
         {/* Logo */}
         <div className="text-center">
-          <span className="text-[#FF385C] font-bold text-2xl tracking-tight">
-            propnest
-          </span>
+          <span className="text-2xl font-bold tracking-tight text-[#FF385C]">propnest</span>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-[22px]">Log in</CardTitle>
             {searchParams.get("next") && (
-              <p className="text-sm text-muted-foreground">
-                Please log in to continue.
-              </p>
+              <p className="text-muted-foreground text-sm">Please log in to continue.</p>
             )}
           </CardHeader>
 
           <CardContent>
             <form onSubmit={handleSubmit} noValidate className="space-y-4">
-
               <div className="space-y-1.5">
                 <Label htmlFor="identifier">Username or email</Label>
                 <Input
@@ -94,20 +91,16 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#E61E4D] via-[#E31C5F]
-                           to-[#D70466] hover:opacity-95"
+                className="w-full bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] hover:opacity-95"
                 disabled={loading || !identifier.trim() || !password}
               >
                 {loading ? "Logging in…" : "Log in"}
               </Button>
-
             </form>
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
-          PropNest Property Management
-        </p>
+        <p className="text-muted-foreground text-center text-xs">PropNest Property Management</p>
       </div>
     </div>
   )

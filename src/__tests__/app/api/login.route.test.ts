@@ -79,9 +79,7 @@ describe("POST /api/auth/login — happy path", () => {
 
     await POST(makeRequest({ identifier: "  admin  ", password: "pass" }))
 
-    expect(mockBackendLogin).toHaveBeenCalledWith(
-      expect.objectContaining({ identifier: "admin" })
-    )
+    expect(mockBackendLogin).toHaveBeenCalledWith(expect.objectContaining({ identifier: "admin" }))
   })
 
   it("calls backendGetMe with the token from backendLogin", async () => {
@@ -167,36 +165,26 @@ describe("POST /api/auth/login — backend errors", () => {
   })
 
   it("returns 500 on unexpected backend error", async () => {
-    const errorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {})
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
 
     mockBackendLogin.mockRejectedValue(new Error("Connection refused"))
 
     const res = await POST(makeRequest({ identifier: "admin", password: "pass" }))
     expect(res.status).toBe(500)
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[auth/login] Unexpected error:",
-      expect.any(Error)
-    )
+    expect(errorSpy).toHaveBeenCalledWith("[auth/login] Unexpected error:", expect.any(Error))
 
     errorSpy.mockRestore()
   })
 
   it("returns 500 when backendGetMe fails after successful login", async () => {
-    const errorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {})
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
 
     mockBackendLogin.mockResolvedValue({ access_token: "tok", token_type: "bearer" })
     mockBackendGetMe.mockRejectedValue(new Error("Profile fetch failed"))
-    
+
     const res = await POST(makeRequest({ identifier: "admin", password: "pass" }))
     expect(res.status).toBe(500)
-    expect(errorSpy).toHaveBeenCalledWith(
-      "[auth/login] Unexpected error:",
-      expect.any(Error)
-    )
+    expect(errorSpy).toHaveBeenCalledWith("[auth/login] Unexpected error:", expect.any(Error))
 
     errorSpy.mockRestore()
   })

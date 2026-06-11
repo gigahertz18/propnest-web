@@ -2,14 +2,14 @@
  * Tests for AuthContext — login, logout, role helpers, session rehydration.
  */
 
-import { render, screen, act, waitFor } from "@testing-library/react"
+import { act, waitFor } from "@testing-library/react"
 import { renderHook } from "@testing-library/react"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/types"
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-const mockPush    = jest.fn()
+const mockPush = jest.fn()
 const mockRefresh = jest.fn()
 
 jest.mock("next/navigation", () => ({
@@ -95,8 +95,7 @@ describe("AuthContext — login", () => {
   beforeEach(() => {
     // First call is rehydration (/api/auth/me) — return 401
     // Second call is login (/api/auth/login)
-    mockFetch
-      .mockReturnValueOnce(mockResponse({ detail: "Not authenticated" }, 401))
+    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Not authenticated" }, 401))
   })
 
   it("calls POST /api/auth/login with credentials", async () => {
@@ -139,9 +138,7 @@ describe("AuthContext — login", () => {
   })
 
   it("throws ApiError on failed login", async () => {
-    mockFetch.mockReturnValueOnce(
-      mockResponse({ detail: "Invalid credentials" }, 401)
-    )
+    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Invalid credentials" }, 401))
     const { result } = renderHook(() => useAuth(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
@@ -153,9 +150,7 @@ describe("AuthContext — login", () => {
   })
 
   it("does not set user on failed login", async () => {
-    mockFetch.mockReturnValueOnce(
-      mockResponse({ detail: "Invalid credentials" }, 401)
-    )
+    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Invalid credentials" }, 401))
     const { result } = renderHook(() => useAuth(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
 
@@ -163,7 +158,9 @@ describe("AuthContext — login", () => {
       await act(async () => {
         await result.current.login({ identifier: "admin", password: "wrong" })
       })
-    } catch { /* expected */ }
+    } catch {
+      /* expected */
+    }
 
     expect(result.current.user).toBeNull()
   })
@@ -174,7 +171,7 @@ describe("AuthContext — login", () => {
 describe("AuthContext — logout", () => {
   it("clears user on logout", async () => {
     mockFetch
-      .mockReturnValueOnce(mockResponse(mockUser))     // rehydrate
+      .mockReturnValueOnce(mockResponse(mockUser)) // rehydrate
       .mockReturnValueOnce(mockResponse({ ok: true })) // logout
 
     const { result } = renderHook(() => useAuth(), { wrapper })
@@ -289,9 +286,7 @@ describe("useAuth — outside provider", () => {
   it("throws when used outside AuthProvider", () => {
     // Suppress expected console.error from React
     const spy = jest.spyOn(console, "error").mockImplementation(() => {})
-    expect(() => renderHook(() => useAuth())).toThrow(
-      "useAuth must be used inside <AuthProvider>"
-    )
+    expect(() => renderHook(() => useAuth())).toThrow("useAuth must be used inside <AuthProvider>")
     spy.mockRestore()
   })
 })

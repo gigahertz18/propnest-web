@@ -132,16 +132,12 @@ describe("usersApi.create", () => {
   })
 
   it("throws ApiError on 409 conflict (duplicate username)", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: "Username already exists" }, 409)
-    )
+    mockFetch.mockReturnValue(mockResponse({ detail: "Username already exists" }, 409))
     await expect(usersApi.create(payload)).rejects.toThrow(ApiError)
   })
 
   it("throws ApiError on 422 validation error", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: "Invalid email" }, 422)
-    )
+    mockFetch.mockReturnValue(mockResponse({ detail: "Invalid email" }, 422))
     try {
       await usersApi.create(payload)
     } catch (err) {
@@ -207,9 +203,7 @@ describe("usersApi.delete", () => {
   })
 
   it("throws ApiError on 400 when deleting own account", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: "Cannot delete your own account" }, 400)
-    )
+    mockFetch.mockReturnValue(mockResponse({ detail: "Cannot delete your own account" }, 400))
     await expect(usersApi.delete("self-id")).rejects.toThrow(ApiError)
   })
 })

@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
 import UserForm from "@/components/ui/UserForm"
-import { User } from "@/types"
+import type { User } from "@/types"
 
 const mockUser: User = {
   id: "abc-123",
@@ -14,12 +13,14 @@ const mockUser: User = {
   updated_at: "2026-01-01T00:00:00Z",
 }
 
-function fillCreateForm(overrides: Partial<{
-  fullName: string
-  username: string
-  email: string
-  password: string
-}> = {}) {
+function fillCreateForm(
+  overrides: Partial<{
+    fullName: string
+    username: string
+    email: string
+    password: string
+  }> = {}
+) {
   const fields = {
     fullName: "Alberto De Guzman",
     username: "alberto",
@@ -95,8 +96,8 @@ describe("UserForm — create mode", () => {
           username: "alberto",
           email: "alberto@propnest.com",
           password: "password123",
-          role: "user",        // default
-          is_active: true,     // default
+          role: "user", // default
+          is_active: true, // default
         })
       )
     })
@@ -130,9 +131,9 @@ describe("UserForm — create mode", () => {
   })
 
   it("shows loading state while submitting", async () => {
-    const onSubmit = jest.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
-    )
+    const onSubmit = jest
+      .fn()
+      .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)))
     render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
     fillCreateForm()
     fireEvent.click(screen.getByRole("button", { name: /create user/i }))
@@ -140,9 +141,9 @@ describe("UserForm — create mode", () => {
   })
 
   it("disables all fields while submitting", async () => {
-    const onSubmit = jest.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 200))
-    )
+    const onSubmit = jest
+      .fn()
+      .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 200)))
     render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
     fillCreateForm()
     fireEvent.click(screen.getByRole("button", { name: /create user/i }))
@@ -153,7 +154,8 @@ describe("UserForm — create mode", () => {
   })
 
   it("clears error on resubmit", async () => {
-    const onSubmit = jest.fn()
+    const onSubmit = jest
+      .fn()
       .mockRejectedValueOnce(new Error("First error"))
       .mockResolvedValueOnce(undefined)
     render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
@@ -220,9 +222,7 @@ describe("UserForm — edit mode", () => {
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ password: "newpassword123" })
-      )
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ password: "newpassword123" }))
     })
   })
 
@@ -236,9 +236,9 @@ describe("UserForm — edit mode", () => {
   })
 
   it("shows loading state as 'Saving…' in edit mode", async () => {
-    const onSubmit = jest.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
-    )
+    const onSubmit = jest
+      .fn()
+      .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)))
     render(<UserForm user={mockUser} onSubmit={onSubmit} onCancel={jest.fn()} />)
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
     expect(await screen.findByText(/saving/i)).toBeInTheDocument()
@@ -261,9 +261,9 @@ describe("UserForm — edge cases", () => {
   })
 
   it("does not call onSubmit when cancel is clicked during loading", async () => {
-    const onSubmit = jest.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 500))
-    )
+    const onSubmit = jest
+      .fn()
+      .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 500)))
     const onCancel = jest.fn()
     render(<UserForm onSubmit={onSubmit} onCancel={onCancel} />)
     fillCreateForm()
@@ -278,12 +278,7 @@ describe("UserForm — edge cases", () => {
   it("uses default role and status when creating a user", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
 
-    render(
-      <UserForm
-        onSubmit={onSubmit}
-        onCancel={jest.fn()}
-      />
-    )
+    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
 
     fillCreateForm()
 

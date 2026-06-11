@@ -5,12 +5,10 @@
  * Safe to import in client components.
  */
 
-import { User, UserCreatePayload, UserUpdatePayload, ApiError } from "@/types"
+import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import { ApiError } from "@/types"
 
-async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
     headers: { "Content-Type": "application/json" },
     ...options,
@@ -21,7 +19,9 @@ async function apiFetch<T>(
     try {
       const body = await res.json()
       detail = body.detail ?? detail
-    } catch { /* non-JSON response */ }
+    } catch {
+      /* non-JSON response */
+    }
     throw new ApiError(res.status, detail)
   }
 
@@ -30,8 +30,7 @@ async function apiFetch<T>(
 }
 
 export const usersApi = {
-  list: (): Promise<User[]> =>
-    apiFetch<User[]>("/api/users"),
+  list: (): Promise<User[]> => apiFetch<User[]>("/api/users"),
 
   create: (payload: UserCreatePayload): Promise<User> =>
     apiFetch<User>("/api/users", {
@@ -45,6 +44,5 @@ export const usersApi = {
       body: JSON.stringify(payload),
     }),
 
-  delete: (id: string): Promise<void> =>
-    apiFetch<void>(`/api/users/${id}`, { method: "DELETE" }),
+  delete: (id: string): Promise<void> => apiFetch<void>(`/api/users/${id}`, { method: "DELETE" }),
 }

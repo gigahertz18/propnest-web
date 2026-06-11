@@ -18,17 +18,22 @@ RUN npm ci && \
       @testing-library/react \
       @testing-library/jest-dom \
       @testing-library/user-event \
-      @types/jest
+      @types/jest \
+      eslint \
+      eslint-config-next \
+      @next/eslint-plugin-next \
+      @typescript-eslint/parser \
+      @typescript-eslint/eslint-plugin \
+      eslint-plugin-react \
+      eslint-plugin-react-hooks \
+      prettier \
+      prettier-plugin-tailwindcss
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 3000
-# Use shell entrypoint for dev server startup (shadcn init + npm run dev)
-# CMD here means `docker compose run frontend npx jest` cleanly overrides it
-# without having to fight an ENTRYPOINT — correct pattern for CI compatibility
 ENTRYPOINT ["/entrypoint.sh"]
-CMD []
 
 # ─── Builder ──────────────────────────────────────────────────────────────────
 FROM base AS builder

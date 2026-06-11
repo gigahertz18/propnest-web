@@ -6,15 +6,15 @@
 
 @theme {
   /* Brand */
-  --color-brand-primary: #FF385C;
-  --color-brand-dark: #E31C5F;
-  --color-brand-deeper: #D70466;
+  --color-brand-primary: #ff385c;
+  --color-brand-dark: #e31c5f;
+  --color-brand-deeper: #d70466;
 
   /* Neutral palette — mirrors Airbnb's grays */
-  --color-neutral-50: #F7F7F7;
-  --color-neutral-100: #EBEBEB;
-  --color-neutral-200: #DDDDDD;
-  --color-neutral-300: #B0B0B0;
+  --color-neutral-50: #f7f7f7;
+  --color-neutral-100: #ebebeb;
+  --color-neutral-200: #dddddd;
+  --color-neutral-300: #b0b0b0;
   --color-neutral-400: #717171;
   --color-neutral-600: #484848;
   --color-neutral-800: #222222;

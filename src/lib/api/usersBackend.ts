@@ -5,15 +5,13 @@
  * Only used in Route Handlers — never imported in client components.
  */
 
-import { User, UserCreatePayload, UserUpdatePayload, ApiError } from "@/types"
+import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import { ApiError } from "@/types"
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"
 const API_PREFIX = "/api/v1"
 
-async function backendFetch<T>(
-  path: string,
-  options: RequestInit & { token: string }
-): Promise<T> {
+async function backendFetch<T>(path: string, options: RequestInit & { token: string }): Promise<T> {
   const { token, ...fetchOptions } = options
 
   const res = await fetch(`${BACKEND_URL}${API_PREFIX}${path}`, {
@@ -30,7 +28,9 @@ async function backendFetch<T>(
     try {
       const body = await res.json()
       detail = body.detail ?? detail
-    } catch { /* non-JSON response */ }
+    } catch {
+      /* non-JSON response */
+    }
     throw new ApiError(res.status, detail)
   }
 
@@ -42,10 +42,7 @@ export async function backendListUsers(token: string): Promise<User[]> {
   return backendFetch<User[]>("/users/", { method: "GET", token })
 }
 
-export async function backendCreateUser(
-  token: string,
-  payload: UserCreatePayload
-): Promise<User> {
+export async function backendCreateUser(token: string, payload: UserCreatePayload): Promise<User> {
   return backendFetch<User>("/users/", {
     method: "POST",
     token,
@@ -65,9 +62,6 @@ export async function backendUpdateUser(
   })
 }
 
-export async function backendDeleteUser(
-  token: string,
-  id: string
-): Promise<void> {
+export async function backendDeleteUser(token: string, id: string): Promise<void> {
   return backendFetch<void>(`/users/${id}`, { method: "DELETE", token })
 }
