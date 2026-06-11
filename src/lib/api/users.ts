@@ -5,7 +5,7 @@
  * Safe to import in client components.
  */
 
-import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import type { User, UserCreatePayload, UserUpdatePayload } from "@/types"
 import { ApiError } from "@/types"
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
-import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import type { User, UserCreatePayload, UserUpdatePayload } from "@/types"
 import { ApiError } from "@/types"
 import { usersApi } from "@/lib/api/users"
 import Modal from "@/components/ui/Modal"

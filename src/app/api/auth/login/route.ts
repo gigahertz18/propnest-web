@@ -1,8 +1,8 @@
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { backendLogin, backendGetMe } from "@/lib/api/backend"
 import { AUTH_COOKIE, COOKIE_OPTIONS } from "@/lib/auth/session"
-import type { LoginPayload } from "@/types";
+import type { LoginPayload } from "@/types"
 import { ApiError } from "@/types"
 
 export async function POST(req: NextRequest) {

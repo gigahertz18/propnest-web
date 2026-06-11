@@ -6,7 +6,7 @@
  * Never import this in client components — it reads server env vars.
  */
 
-import type { TokenResponse, CurrentUser, LoginPayload } from "@/types";
+import type { TokenResponse, CurrentUser, LoginPayload } from "@/types"
 import { ApiError } from "@/types"
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"

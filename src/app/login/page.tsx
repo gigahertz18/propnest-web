@@ -1,6 +1,6 @@
 "use client"
 
-import type { FormEvent } from "react";
+import type { FormEvent } from "react"
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"

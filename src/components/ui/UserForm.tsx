@@ -1,6 +1,6 @@
 "use client"
 
-import type { FormEvent } from "react";
+import type { FormEvent } from "react"
 import { useState } from "react"
 import type { User, UserCreatePayload, UserUpdatePayload, UserRole } from "@/types"
 import { Button } from "@/components/ui/button"

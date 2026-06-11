@@ -3,7 +3,7 @@
  * DELETE /api/users/[id]  — delete a user (admin only)
  */
 
-import type { NextRequest} from "next/server";
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { getToken } from "@/lib/auth/session"
 import { backendUpdateUser, backendDeleteUser } from "@/lib/api/usersBackend"

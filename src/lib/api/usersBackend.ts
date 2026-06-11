@@ -5,7 +5,7 @@
  * Only used in Route Handlers — never imported in client components.
  */
 
-import type { User, UserCreatePayload, UserUpdatePayload} from "@/types";
+import type { User, UserCreatePayload, UserUpdatePayload } from "@/types"
 import { ApiError } from "@/types"
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"

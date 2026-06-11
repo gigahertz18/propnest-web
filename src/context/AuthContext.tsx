@@ -1,9 +1,9 @@
 "use client"
 
-import type { ReactNode } from "react";
+import type { ReactNode } from "react"
 import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import type { CurrentUser, LoginPayload} from "@/types";
+import type { CurrentUser, LoginPayload } from "@/types"
 import { ApiError } from "@/types"
 
 interface AuthContextValue {
