@@ -37,7 +37,7 @@ jest.mock("@/lib/api/properties", () => ({
 /* eslint-disable @next/next/no-img-element */
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
+  default: ({ fill, unoptimized, ...props }: any) => <img {...props} />,
 }))
 
 const mockListImages = propertiesApi.propertiesApi.listImages as jest.MockedFunction<
@@ -64,6 +64,15 @@ beforeEach(() => {
   mockListImages.mockResolvedValue([])
 })
 
+
+afterEach(async () => {
+  // Flush the PropertyForm useEffect's listImages().then().finally() chain
+  // so its state updates land inside act() before the next test renders.
+  await act(async () => {
+    await Promise.resolve()
+  })
+})
+
 // ─── Create mode ──────────────────────────────────────────────────────────────
 
 describe("PropertyForm — create mode", () => {
@@ -73,7 +82,8 @@ describe("PropertyForm — create mode", () => {
     expect(screen.getByLabelText(/address/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
     expect(screen.getByText(/status/i)).toBeInTheDocument()
-    expect(screen.getByText(/photos/i)).toBeInTheDocument()
+    // expect(screen.getByText(/photos/i)).toBeInTheDocument()
+    expect(screen.getByText(/^photos$/i)).toBeInTheDocument()
   })
 
   it("does not show Active field in create mode", () => {
@@ -201,7 +211,9 @@ describe("PropertyForm — create mode", () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/property name/i)).toBeDisabled()
     })
-    act(() => resolveSubmit())
+    await act(async () => {
+      resolveSubmit()
+    })
   })
 
   it("shows 'Creating…' label while submitting", async () => {
@@ -219,7 +231,9 @@ describe("PropertyForm — create mode", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /creating/i })).toBeInTheDocument()
     })
-    act(() => resolveSubmit())
+    await act(async () => {
+      resolveSubmit()
+    })
   })
 })
 
@@ -228,6 +242,11 @@ describe("PropertyForm — create mode", () => {
 describe("PropertyForm — edit mode", () => {
   it("pre-fills all fields from the property prop", async () => {
     render(<PropertyForm property={mockProperty} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
+
     expect(screen.getByLabelText(/property name/i)).toHaveValue("Sunset Villa")
     expect(screen.getByLabelText(/address/i)).toHaveValue("123 Main St, Laguna")
     expect(screen.getByLabelText(/description/i)).toHaveValue("A lovely villa")
@@ -235,17 +254,27 @@ describe("PropertyForm — edit mode", () => {
 
   it("shows the Active field in edit mode", async () => {
     render(<PropertyForm property={mockProperty} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     expect(screen.getByText(/^active$/i)).toBeInTheDocument()
   })
 
-  it("shows 'Save changes' button label in edit mode", () => {
+  it("shows 'Save changes' button label in edit mode", async () => {
     render(<PropertyForm property={mockProperty} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument()
   })
 
   it("only sends changed fields in the patch payload", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
     render(<PropertyForm property={mockProperty} onSubmit={onSubmit} onCancel={jest.fn()} />)
+
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     // Change only the name
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "New Name" } })
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
@@ -257,9 +286,17 @@ describe("PropertyForm — edit mode", () => {
   it("sends is_active when toggled to false", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
     render(<PropertyForm property={mockProperty} onSubmit={onSubmit} onCancel={jest.fn()} />)
-    // Toggle active to false via select
-    const activeSelect = screen.getByDisplayValue(/active/i)
-    fireEvent.change(activeSelect, { target: { value: "false" } })
+
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
+    const activeSelect = screen.getAllByRole("combobox")[1]
+
+    await userEvent.click(activeSelect)
+
+    const inactiveOption = await screen.findByRole("option", { name: /inactive/i })
+    await userEvent.click(inactiveOption)
+
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
@@ -272,6 +309,9 @@ describe("PropertyForm — edit mode", () => {
   it("sends empty payload when nothing changed", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
     render(<PropertyForm property={mockProperty} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({}, [])
@@ -296,11 +336,16 @@ describe("PropertyForm — edit mode", () => {
         })
     )
     render(<PropertyForm property={mockProperty} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /saving/i })).toBeInTheDocument()
     })
-    act(() => resolveSubmit())
+    await act(async () => {
+      resolveSubmit()
+    })
   })
 })
 
@@ -369,9 +414,12 @@ describe("PropertyForm — image upload zone", () => {
     expect(() => fireEvent.click(screen.getByLabelText(/remove/i))).not.toThrow()
   })
 
-  it("does not show image previews when no images are present", () => {
+  it("does not show image previews when no images are present", async () => {
     mockListImages.mockResolvedValue([])
     render(<PropertyForm property={mockProperty} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await waitFor(() => {
+      expect(mockListImages).toHaveBeenCalled()
+    })
     expect(document.querySelectorAll("img").length).toBe(0)
   })
 })

@@ -126,10 +126,12 @@ describe("GET /api/properties", () => {
   })
 
   it("returns 500 on unexpected backend error", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")
     mockList.mockRejectedValue(new Error("Database connection lost"))
     const res = await listGET()
     expect(res.status).toBe(500)
+    errorSpy.mockRestore()
   })
 })
 
@@ -174,10 +176,12 @@ describe("POST /api/properties", () => {
   })
 
   it("returns 500 on unexpected error", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")
     mockCreate.mockRejectedValue(new Error("Unexpected"))
     const res = await listPOST(makeRequest(payload, "POST"))
     expect(res.status).toBe(500)
+    errorSpy.mockRestore()
   })
 })
 
@@ -224,10 +228,12 @@ describe("PATCH /api/properties/[id]", () => {
   })
 
   it("returns 500 on unexpected error", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")
     mockUpdate.mockRejectedValue(new Error("DB error"))
     const res = await PATCH(makeIdRequest("prop-uuid-1", {}), idParams("prop-uuid-1"))
     expect(res.status).toBe(500)
+    errorSpy.mockRestore()
   })
 })
 
@@ -278,6 +284,7 @@ describe("DELETE /api/properties/[id]", () => {
   })
 
   it("returns 500 on unexpected error", async () => {
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")
     mockDelete.mockRejectedValue(new Error("Unexpected"))
     const res = await DELETE(
@@ -285,5 +292,6 @@ describe("DELETE /api/properties/[id]", () => {
       idParams("prop-uuid-1")
     )
     expect(res.status).toBe(500)
+    errorSpy.mockRestore()
   })
 })

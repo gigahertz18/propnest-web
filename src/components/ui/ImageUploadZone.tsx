@@ -112,6 +112,7 @@ export function ImageUploadZone({
               <button
                 type="button"
                 onClick={() => onRemoveImage(img.id)}
+                aria-label="Remove image"
                 className="absolute top-1 right-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white group-hover:flex"
               >
                 <svg
@@ -151,6 +152,7 @@ export function ImageUploadZone({
                   <button
                     type="button"
                     onClick={() => onRemovePending(i)}
+                    aria-label="Remove image"
                     className="absolute top-1 right-1 hidden h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white group-hover:flex"
                   >
                     <svg
