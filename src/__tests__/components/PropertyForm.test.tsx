@@ -37,7 +37,7 @@ jest.mock("@/lib/api/properties", () => ({
 /* eslint-disable @next/next/no-img-element */
 jest.mock("next/image", () => ({
   __esModule: true,
-  default: ({ fill, unoptimized, ...props }: any) => <img {...props} />,
+  default: ({ fill: _fill, unoptimized: _unoptimized, ...props }: any) => <img {...props} />,
 }))
 
 const mockListImages = propertiesApi.propertiesApi.listImages as jest.MockedFunction<
@@ -63,7 +63,6 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockListImages.mockResolvedValue([])
 })
-
 
 afterEach(async () => {
   // Flush the PropertyForm useEffect's listImages().then().finally() chain
@@ -242,7 +241,7 @@ describe("PropertyForm — create mode", () => {
 describe("PropertyForm — edit mode", () => {
   it("pre-fills all fields from the property prop", async () => {
     render(<PropertyForm property={mockProperty} onSubmit={jest.fn()} onCancel={jest.fn()} />)
-    
+
     await waitFor(() => {
       expect(mockListImages).toHaveBeenCalled()
     })
