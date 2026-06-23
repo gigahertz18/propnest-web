@@ -1,0 +1,26 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    container_name: propnest_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8000}
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      propnest_network:
+        aliases:
+          - propnest.frontend.ui
+
+networks:
+  propnest_network:
+    driver: bridge

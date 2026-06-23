@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ── Secret scan ───────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: zricethezav/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — lint, format, test
+    needs: secret-scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install \
+            clsx \
+            class-variance-authority \
+            tailwindcss-animate \
+            lucide-react
+          npm install --save-dev \
+            jest \
+            jest-environment-jsdom \
+            @testing-library/react \
+            @testing-library/jest-dom \
+            @testing-library/user-event \
+            @types/jest \
+            eslint \
+            eslint-config-next \
+            @next/eslint-plugin-next \
+            @typescript-eslint/parser \
+            @typescript-eslint/eslint-plugin \
+            eslint-plugin-react \
+            eslint-plugin-react-hooks \
+            prettier \
+            prettier-plugin-tailwindcss
+
+      - name: Lint (ESLint)
+        run: ENV=unittest make lint-fe
+
+      - name: Format check (Prettier)
+        run: ENV=unittest make format-fe
+
+      - name: Run tests
+        run: ENV=unittest make test-fe
