@@ -1,15 +1,10 @@
 "use client"
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-  ReactNode,
-} from "react"
+import type { ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { CurrentUser, LoginPayload, ApiError } from "@/types"
+import type { CurrentUser, LoginPayload } from "@/types"
+import { ApiError } from "@/types"
 
 interface AuthContextValue {
   user: CurrentUser | null

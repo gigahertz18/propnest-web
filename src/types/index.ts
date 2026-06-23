@@ -22,6 +22,35 @@ export interface LoginPayload {
   identifier: string
   password: string
 }
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string
+  username: string
+  email: string
+  full_name: string
+  role: UserRole
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface UserCreatePayload {
+  username: string
+  email: string
+  full_name: string
+  role: UserRole
+  is_active: boolean
+}
+
+export interface UserUpdatePayload {
+  username?: string
+  email?: string
+  full_name?: string
+  password?: string
+  role?: UserRole
+  is_active?: boolean
+}
 
 // ─── API Errors ───────────────────────────────────────────────────────────────
 

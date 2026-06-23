@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { AUTH_COOKIE } from "@/lib/auth/session"
 
 const PUBLIC_ROUTES = ["/login"]
@@ -30,7 +31,9 @@ export function middleware(req: NextRequest) {
     url.search = ""
     return NextResponse.redirect(url)
   }
-
+  // Note: /admin/* role enforcement (admin-only) is handled in the page
+  // component itself via AuthContext, since middleware can't decode the JWT
+  // role without adding a JWT library to the edge runtime.
   return NextResponse.next()
 }
 

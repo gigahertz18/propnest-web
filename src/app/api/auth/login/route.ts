@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 import { backendLogin, backendGetMe } from "@/lib/api/backend"
 import { AUTH_COOKIE, COOKIE_OPTIONS } from "@/lib/auth/session"
-import { ApiError, LoginPayload } from "@/types"
+import type { LoginPayload } from "@/types"
+import { ApiError } from "@/types"
 
 export async function POST(req: NextRequest) {
   let body: LoginPayload
@@ -15,10 +17,7 @@ export async function POST(req: NextRequest) {
   const { identifier, password } = body
 
   if (!identifier?.trim() || !password) {
-    return NextResponse.json(
-      { detail: "Identifier and password are required" },
-      { status: 400 }
-    )
+    return NextResponse.json({ detail: "Identifier and password are required" }, { status: 400 })
   }
 
   try {

@@ -7,7 +7,7 @@
  */
 
 import { cookies } from "next/headers"
-import { CurrentUser } from "@/types"
+import type { CurrentUser } from "@/types"
 import { backendGetMe } from "@/lib/api/backend"
 
 export const AUTH_COOKIE = "pn_token"
