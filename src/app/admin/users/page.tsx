@@ -106,7 +106,7 @@ export default function AdminUsersPage() {
   if (authLoading || !isAdmin) return null
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div>
       {/* Toast */}
       {toast && (
         <div className="fixed top-5 right-5 z-50 rounded-xl bg-neutral-900 px-4 py-3 text-sm text-white shadow-lg">

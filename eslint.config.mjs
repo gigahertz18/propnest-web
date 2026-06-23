@@ -30,6 +30,11 @@ const eslintConfig = [
         tsconfigRootDir: __dirname,
       },
     },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
     plugins: {
       "@next/next": nextPlugin,
       "@typescript-eslint": tsPlugin,
