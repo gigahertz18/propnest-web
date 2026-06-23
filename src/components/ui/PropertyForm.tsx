@@ -19,9 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { ImageUploadZone } from "@/components/ui/ImageUploadZone" 
+import { ImageUploadZone } from "@/components/ui/ImageUploadZone"
 import type { UploadedImage } from "@/components/ui/ImageUploadZone"
-
 
 // ─── Property Form ────────────────────────────────────────────────────────────
 

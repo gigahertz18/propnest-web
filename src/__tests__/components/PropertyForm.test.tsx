@@ -189,7 +189,10 @@ describe("PropertyForm — create mode", () => {
   it("disables fields while submitting", async () => {
     let resolveSubmit!: () => void
     const onSubmit = jest.fn(
-      () => new Promise<void>((res) => { resolveSubmit = res })
+      () =>
+        new Promise<void>((res) => {
+          resolveSubmit = res
+        })
     )
     render(<PropertyForm onSubmit={onSubmit} onCancel={jest.fn()} />)
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "Place" } })
@@ -204,7 +207,10 @@ describe("PropertyForm — create mode", () => {
   it("shows 'Creating…' label while submitting", async () => {
     let resolveSubmit!: () => void
     const onSubmit = jest.fn(
-      () => new Promise<void>((res) => { resolveSubmit = res })
+      () =>
+        new Promise<void>((res) => {
+          resolveSubmit = res
+        })
     )
     render(<PropertyForm onSubmit={onSubmit} onCancel={jest.fn()} />)
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "Place" } })
@@ -244,10 +250,7 @@ describe("PropertyForm — edit mode", () => {
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "New Name" } })
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith(
-        { name: "New Name" },
-        []
-      )
+      expect(onSubmit).toHaveBeenCalledWith({ name: "New Name" }, [])
     })
   })
 
@@ -287,7 +290,10 @@ describe("PropertyForm — edit mode", () => {
   it("shows 'Saving…' label while submitting", async () => {
     let resolveSubmit!: () => void
     const onSubmit = jest.fn(
-      () => new Promise<void>((res) => { resolveSubmit = res })
+      () =>
+        new Promise<void>((res) => {
+          resolveSubmit = res
+        })
     )
     render(<PropertyForm property={mockProperty} onSubmit={onSubmit} onCancel={jest.fn()} />)
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
@@ -326,10 +332,7 @@ describe("PropertyForm — image upload zone", () => {
     fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Addr" } })
     fireEvent.click(screen.getByRole("button", { name: /create property/i }))
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith(
-        expect.any(Object),
-        [file]
-      )
+      expect(onSubmit).toHaveBeenCalledWith(expect.any(Object), [file])
     })
   })
 

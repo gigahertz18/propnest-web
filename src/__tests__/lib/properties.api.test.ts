@@ -257,7 +257,11 @@ describe("propertiesApi.delete", () => {
 
 describe("propertiesApi.uploadImage", () => {
   const mockFile = new File(["img content"], "photo.jpg", { type: "image/jpeg" })
-  const mockImageResult = { id: "doc-1", file_url: "https://minio/photo.jpg", filename: "photo.jpg" }
+  const mockImageResult = {
+    id: "doc-1",
+    file_url: "https://minio/photo.jpg",
+    filename: "photo.jpg",
+  }
 
   it("calls POST /api/properties/:id/images", async () => {
     mockFetch.mockReturnValue(mockResponse(mockImageResult, 201))
@@ -313,10 +317,7 @@ describe("propertiesApi.listImages", () => {
   it("calls GET /api/properties/:id/images", async () => {
     mockFetch.mockReturnValue(mockResponse(mockImages))
     await propertiesApi.listImages("prop-uuid-1")
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/properties/prop-uuid-1/images",
-      expect.any(Object)
-    )
+    expect(mockFetch).toHaveBeenCalledWith("/api/properties/prop-uuid-1/images", expect.any(Object))
   })
 
   it("returns array of images", async () => {

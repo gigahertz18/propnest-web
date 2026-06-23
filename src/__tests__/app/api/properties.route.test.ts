@@ -29,10 +29,18 @@ import * as session from "@/lib/auth/session"
 import { GET as listGET, POST as listPOST } from "@/app/api/properties/route"
 import { PATCH, DELETE } from "@/app/api/properties/[id]/route"
 
-const mockList = backend.backendListProperties as jest.MockedFunction<typeof backend.backendListProperties>
-const mockCreate = backend.backendCreateProperty as jest.MockedFunction<typeof backend.backendCreateProperty>
-const mockUpdate = backend.backendUpdateProperty as jest.MockedFunction<typeof backend.backendUpdateProperty>
-const mockDelete = backend.backendDeleteProperty as jest.MockedFunction<typeof backend.backendDeleteProperty>
+const mockList = backend.backendListProperties as jest.MockedFunction<
+  typeof backend.backendListProperties
+>
+const mockCreate = backend.backendCreateProperty as jest.MockedFunction<
+  typeof backend.backendCreateProperty
+>
+const mockUpdate = backend.backendUpdateProperty as jest.MockedFunction<
+  typeof backend.backendUpdateProperty
+>
+const mockDelete = backend.backendDeleteProperty as jest.MockedFunction<
+  typeof backend.backendDeleteProperty
+>
 const mockGetToken = session.getToken as jest.MockedFunction<typeof session.getToken>
 
 const mockProperty = {
@@ -50,14 +58,18 @@ const mockProperty = {
 function makeRequest(body?: unknown, method = "GET") {
   return new NextRequest("http://localhost:3000/api/properties", {
     method,
-    ...(body ? { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } } : {}),
+    ...(body
+      ? { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } }
+      : {}),
   })
 }
 
 function makeIdRequest(id: string, body?: unknown, method = "PATCH") {
   return new NextRequest(`http://localhost:3000/api/properties/${id}`, {
     method,
-    ...(body ? { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } } : {}),
+    ...(body
+      ? { body: JSON.stringify(body), headers: { "Content-Type": "application/json" } }
+      : {}),
   })
 }
 
@@ -182,7 +194,10 @@ describe("PATCH /api/properties/[id]", () => {
     mockGetToken.mockResolvedValue("token")
     const updated = { ...mockProperty, name: "Updated Name" }
     mockUpdate.mockResolvedValue(updated)
-    const res = await PATCH(makeIdRequest("prop-uuid-1", { name: "Updated Name" }), idParams("prop-uuid-1"))
+    const res = await PATCH(
+      makeIdRequest("prop-uuid-1", { name: "Updated Name" }),
+      idParams("prop-uuid-1")
+    )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(updated)
   })
@@ -221,14 +236,20 @@ describe("PATCH /api/properties/[id]", () => {
 describe("DELETE /api/properties/[id]", () => {
   it("returns 401 when no token", async () => {
     mockGetToken.mockResolvedValue(null)
-    const res = await DELETE(makeIdRequest("prop-uuid-1", undefined, "DELETE"), idParams("prop-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("prop-uuid-1", undefined, "DELETE"),
+      idParams("prop-uuid-1")
+    )
     expect(res.status).toBe(401)
   })
 
   it("returns 204 on successful delete", async () => {
     mockGetToken.mockResolvedValue("token")
     mockDelete.mockResolvedValue(undefined)
-    const res = await DELETE(makeIdRequest("prop-uuid-1", undefined, "DELETE"), idParams("prop-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("prop-uuid-1", undefined, "DELETE"),
+      idParams("prop-uuid-1")
+    )
     expect(res.status).toBe(204)
   })
 
@@ -249,14 +270,20 @@ describe("DELETE /api/properties/[id]", () => {
   it("forwards 403 when non-admin tries to delete", async () => {
     mockGetToken.mockResolvedValue("manager-token")
     mockDelete.mockRejectedValue(new ApiError(403, "Forbidden"))
-    const res = await DELETE(makeIdRequest("prop-uuid-1", undefined, "DELETE"), idParams("prop-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("prop-uuid-1", undefined, "DELETE"),
+      idParams("prop-uuid-1")
+    )
     expect(res.status).toBe(403)
   })
 
   it("returns 500 on unexpected error", async () => {
     mockGetToken.mockResolvedValue("token")
     mockDelete.mockRejectedValue(new Error("Unexpected"))
-    const res = await DELETE(makeIdRequest("prop-uuid-1", undefined, "DELETE"), idParams("prop-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("prop-uuid-1", undefined, "DELETE"),
+      idParams("prop-uuid-1")
+    )
     expect(res.status).toBe(500)
   })
 })

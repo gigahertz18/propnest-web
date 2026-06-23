@@ -16,8 +16,18 @@ jest.mock("@/context/AuthContext", () => ({
 
 jest.mock("next/link", () => ({
   __esModule: true,
-  default: ({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) => (
-    <a href={href} className={className}>{children}</a>
+  default: ({
+    href,
+    children,
+    className,
+  }: {
+    href: string
+    children: React.ReactNode
+    className?: string
+  }) => (
+    <a href={href} className={className}>
+      {children}
+    </a>
   ),
 }))
 
@@ -135,7 +145,11 @@ describe("AdminNav — logout", () => {
 
   it("shows 'Logging out…' while logout is in progress", async () => {
     let resolveLogout!: () => void
-    mockLogout.mockReturnValue(new Promise<void>((res) => { resolveLogout = res }))
+    mockLogout.mockReturnValue(
+      new Promise<void>((res) => {
+        resolveLogout = res
+      })
+    )
     setupAuth()
     render(<AdminNav />)
     fireEvent.click(screen.getByRole("button", { name: /log out/i }))
@@ -147,7 +161,11 @@ describe("AdminNav — logout", () => {
 
   it("disables the button while logging out", async () => {
     let resolveLogout!: () => void
-    mockLogout.mockReturnValue(new Promise<void>((res) => { resolveLogout = res }))
+    mockLogout.mockReturnValue(
+      new Promise<void>((res) => {
+        resolveLogout = res
+      })
+    )
     setupAuth()
     render(<AdminNav />)
     fireEvent.click(screen.getByRole("button", { name: /log out/i }))
@@ -159,7 +177,11 @@ describe("AdminNav — logout", () => {
 
   it("does not call logout more than once if clicked multiple times", async () => {
     let resolveLogout!: () => void
-    mockLogout.mockReturnValue(new Promise<void>((res) => { resolveLogout = res }))
+    mockLogout.mockReturnValue(
+      new Promise<void>((res) => {
+        resolveLogout = res
+      })
+    )
     setupAuth()
     render(<AdminNav />)
     const btn = screen.getByRole("button", { name: /log out/i })
