@@ -8,6 +8,10 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Defaults to host.docker.internal so this works out of the box when
+      # propnest-api is running standalone on your host via its own
+      # docker-compose. Override with a real URL if the API is deployed
+      # elsewhere, or point it at another container on a shared network.
       - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8000}
       - NODE_ENV=development
     volumes:
