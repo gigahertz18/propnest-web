@@ -103,22 +103,29 @@ export default async function DashboardPage() {
             <p className="mt-0.5 text-xs text-[#717171]">Coming soon</p>
           </div>
 
-          {/* Contracts — placeholder */}
-          <div className="cursor-not-allowed rounded-2xl border border-[#EBEBEB] bg-white p-6 opacity-40">
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F5E9]">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M4 2h7l4 4v11a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1zM11 2v4h4M6 9h6M6 12h4"
-                  stroke="#2E7D32"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-[#222222]">Contracts</p>
-            <p className="mt-0.5 text-xs text-[#717171]">Coming soon</p>
-          </div>
+          {/* Contracts — managers and admins */}
+          {isAtLeastManager && (
+            <Link
+              href="/admin/contracts"
+              className="group rounded-2xl border border-[#EBEBEB] bg-white p-6 transition-shadow hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E8F5E9]">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path
+                    d="M4 2h7l4 4v11a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1zM11 2v4h4M6 9h6M6 12h4"
+                    stroke="#2E7D32"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-[#222222] transition-colors group-hover:text-[#2E7D32]">
+                Contracts
+              </p>
+              <p className="mt-0.5 text-xs text-[#717171]">Manage rental contracts</p>
+            </Link>
+          )}
         </div>
       </main>
     </div>

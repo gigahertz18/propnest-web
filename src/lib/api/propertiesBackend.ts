@@ -69,7 +69,11 @@ async function backendFetchMultipart<T>(
 }
 
 export async function backendListProperties(token: string): Promise<Property[]> {
-  return backendFetch<Property[]>("/properties/", { method: "GET", token })
+  const page = await backendFetch<{ items: Property[]; total: number }>("/properties/", {
+    method: "GET",
+    token,
+  })
+  return page.items
 }
 
 export async function backendGetProperty(token: string, id: string): Promise<Property> {
