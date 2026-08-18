@@ -22,7 +22,7 @@ Dashboard
 
 ## Lease UI
 
-Planned:
+Done:
 
 - lease list/detail
 - create/update lease

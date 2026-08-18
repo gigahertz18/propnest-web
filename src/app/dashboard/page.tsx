@@ -133,6 +133,30 @@ export default async function DashboardPage() {
               <p className="mt-0.5 text-xs text-[#717171]">Manage rental contracts</p>
             </Link>
           )}
+
+          {/* Leases — managers and admins */}
+          {isAtLeastManager && (
+            <Link
+              href="/admin/leases"
+              className="group rounded-2xl border border-[#EBEBEB] bg-white p-6 transition-shadow hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E3F2FD]">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path
+                    d="M4 2h10v14H4V2zM7 6h4M7 9h4M7 12h4"
+                    stroke="#1565C0"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-[#222222] transition-colors group-hover:text-[#1565C0]">
+                Leases
+              </p>
+              <p className="mt-0.5 text-xs text-[#717171]">Manage active lease terms</p>
+            </Link>
+          )}
         </div>
       </main>
     </div>
