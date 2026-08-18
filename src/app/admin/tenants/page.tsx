@@ -232,7 +232,9 @@ export default function AdminTenantsPage() {
         {!fetching && !fetchError && tenants.length === 0 && (
           <div className="flex flex-col items-center rounded-xl border bg-white py-16 text-center">
             <p className="text-sm font-medium">No tenants yet</p>
-            <p className="text-muted-foreground mt-1 text-sm">Add your first tenant to get started.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Add your first tenant to get started.
+            </p>
           </div>
         )}
 

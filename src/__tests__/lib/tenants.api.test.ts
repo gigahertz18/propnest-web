@@ -164,7 +164,9 @@ describe("tenantsApi.create", () => {
   })
 
   it("throws ApiError on 409 when a tenant with this email already exists", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Tenant with this email already exists" }, 409))
+    mockFetch.mockReturnValue(
+      mockResponse({ detail: "Tenant with this email already exists" }, 409)
+    )
     await expect(tenantsApi.create(createPayload)).rejects.toThrow(ApiError)
   })
 

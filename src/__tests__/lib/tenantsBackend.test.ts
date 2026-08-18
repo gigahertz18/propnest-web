@@ -36,7 +36,9 @@ beforeEach(() => {
 
 describe("tenantsBackend detail extraction", () => {
   it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Tenant with this email already exists" }, 409))
+    mockFetch.mockReturnValue(
+      mockResponse({ detail: "Tenant with this email already exists" }, 409)
+    )
     await expect(backendCreateTenant("token", createPayload)).rejects.toThrow(ApiError)
     try {
       await backendCreateTenant("token", createPayload)

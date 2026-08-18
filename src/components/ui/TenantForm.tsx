@@ -207,13 +207,7 @@ export function TenantForm({ tenant, onSubmit, onCancel, onError }: TenantFormPr
           disabled={loading || !requiredFilled}
           className="bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] text-white hover:opacity-95"
         >
-          {loading
-            ? isEdit
-              ? "Saving…"
-              : "Creating…"
-            : isEdit
-              ? "Save changes"
-              : "Create tenant"}
+          {loading ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save changes" : "Create tenant"}
         </Button>
       </div>
     </form>

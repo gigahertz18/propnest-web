@@ -31,7 +31,9 @@ import * as session from "@/lib/auth/session"
 import { GET as listGET, POST as listPOST } from "@/app/api/tenants/route"
 import { GET as getGET, PATCH, DELETE } from "@/app/api/tenants/[id]/route"
 
-const mockList = backend.backendListTenants as jest.MockedFunction<typeof backend.backendListTenants>
+const mockList = backend.backendListTenants as jest.MockedFunction<
+  typeof backend.backendListTenants
+>
 const mockGet = backend.backendGetTenant as jest.MockedFunction<typeof backend.backendGetTenant>
 const mockCreate = backend.backendCreateTenant as jest.MockedFunction<
   typeof backend.backendCreateTenant
@@ -193,14 +195,20 @@ describe("POST /api/tenants", () => {
 describe("GET /api/tenants/[id]", () => {
   it("returns 401 when no token", async () => {
     mockGetToken.mockResolvedValue(null)
-    const res = await getGET(makeIdRequest("tenant-uuid-1", undefined, "GET"), idParams("tenant-uuid-1"))
+    const res = await getGET(
+      makeIdRequest("tenant-uuid-1", undefined, "GET"),
+      idParams("tenant-uuid-1")
+    )
     expect(res.status).toBe(401)
   })
 
   it("returns 200 with tenant on success", async () => {
     mockGetToken.mockResolvedValue("token")
     mockGet.mockResolvedValue(mockTenant)
-    const res = await getGET(makeIdRequest("tenant-uuid-1", undefined, "GET"), idParams("tenant-uuid-1"))
+    const res = await getGET(
+      makeIdRequest("tenant-uuid-1", undefined, "GET"),
+      idParams("tenant-uuid-1")
+    )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(mockTenant)
   })
