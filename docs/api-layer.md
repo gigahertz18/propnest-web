@@ -192,6 +192,36 @@ This is preferable to sending an entire resource representation for partial upda
 ---
 
 
+## 17. Contract Feature
+
+The contract feature currently provides:
+
+- list
+- create
+- update
+- delete
+
+A Contract associates a `Property` and a `Tenant` for a rental period. Edit-mode PATCH payloads only include changed fields, following the same partial-update pattern as Properties and Users.
+
+The tenant field is presented as a searchable combobox filtered by tenant full name rather than a raw UUID input field, since a tenant's identifier is not something an admin user would know from memory.
+
+---
+
+
+## 18. Tenant Feature
+
+The tenant feature currently provides:
+
+- list
+- create
+- update
+- delete
+
+Tenant records are referenced by the Contract feature (via the combobox described above) but remain UI-agnostic of Lease/Billing associations — those consume Tenant references, not the reverse.
+
+---
+
+
 ## 19. Error Handling
 
 The frontend defines `ApiError` as the common transport-level error abstraction.

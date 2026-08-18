@@ -82,26 +82,33 @@ export default async function DashboardPage() {
             </Link>
           )}
 
-          {/* Tenants — coming soon placeholder */}
-          <div className="rounded-2xl border border-[#EBEBEB] bg-white p-6 opacity-50">
-            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E1F5EE]">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M12 9a3 3 0 100-6 3 3 0 000 6zM4.5 16c0-2.8 3.4-5 7.5-5"
-                  stroke="#085041"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M2 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5"
-                  stroke="#085041"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </div>
-            <p className="text-sm font-semibold text-[#222222]">Tenants</p>
-            <p className="mt-0.5 text-xs text-[#717171]">Coming soon</p>
-          </div>
+          {/* Tenants — managers and admins */}
+          {isAtLeastManager && (
+            <Link
+              href="/admin/tenants"
+              className="group rounded-2xl border border-[#EBEBEB] bg-white p-6 transition-shadow hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#E1F5EE]">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path
+                    d="M12 9a3 3 0 100-6 3 3 0 000 6zM4.5 16c0-2.8 3.4-5 7.5-5"
+                    stroke="#085041"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M2 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5"
+                    stroke="#085041"
+                    strokeWidth="1.5"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-[#222222] transition-colors group-hover:text-[#085041]">
+                Tenants
+              </p>
+              <p className="mt-0.5 text-xs text-[#717171]">Manage tenant records</p>
+            </Link>
+          )}
 
           {/* Contracts — managers and admins */}
           {isAtLeastManager && (

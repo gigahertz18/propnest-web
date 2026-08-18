@@ -22,7 +22,7 @@ overdue
 written_off
 ```
 
-The exact final states must come from the backend contract. fileciteturn3file0
+The exact final states must come from the backend contract.
 
 ## Views
 
