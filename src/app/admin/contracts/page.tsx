@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 
 import { useRouter } from "next/navigation"
@@ -72,16 +72,31 @@ export default function AdminContractsPage() {
   const [fetching, setFetching] = useState(true)
   const [modal, setModal] = useState<ModalState>({ type: "closed" })
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; variant: "success" | "error" } | null>(null)
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!authLoading && !isAtLeastManager) router.replace("/dashboard")
   }, [authLoading, isAtLeastManager, router])
 
-  const showToast = (msg: string) => {
-    setToast(msg)
-    setTimeout(() => setToast(null), 3000)
+  const TOAST_DURATION_MS = 3 * 60 * 1000
+
+  const showToast = (message: string, variant: "success" | "error" = "success") => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    setToast({ message, variant })
+    toastTimeoutRef.current = setTimeout(() => setToast(null), TOAST_DURATION_MS)
   }
+
+  const dismissToast = () => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    setToast(null)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current)
+    }
+  }, [])
 
   const loadData = useCallback(async () => {
     setFetching(true)
@@ -133,7 +148,7 @@ export default function AdminContractsPage() {
       showToast("Contract deleted")
       setModal({ type: "closed" })
     } catch (err) {
-      showToast(err instanceof ApiError ? err.detail : "Delete failed")
+      showToast(err instanceof ApiError ? err.detail : "Delete failed", "error")
     } finally {
       setDeleteLoading(false)
     }
@@ -145,8 +160,30 @@ export default function AdminContractsPage() {
     <div>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 rounded-xl bg-neutral-900 px-4 py-3 text-sm text-white shadow-lg">
-          {toast}
+        <div
+          role={toast.variant === "error" ? "alert" : "status"}
+          className={[
+            // z-[100]: must render above the modal's backdrop-blur overlay (z-50),
+            // otherwise the overlay paints on top and blurs the toast underneath it.
+            "fixed top-5 right-5 z-[100] flex max-w-sm items-start gap-2 rounded-xl px-4 py-3 text-sm break-words whitespace-normal text-white shadow-lg",
+            toast.variant === "error" ? "bg-red-600" : "bg-neutral-900",
+          ].join(" ")}
+        >
+          <button
+            onClick={dismissToast}
+            aria-label="Dismiss"
+            className="-ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center opacity-80 hover:opacity-100"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path
+                d="M1 1l10 10M11 1L1 11"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+          <span>{toast.message}</span>
         </div>
       )}
 
@@ -317,6 +354,7 @@ export default function AdminContractsPage() {
           properties={properties}
           onSubmit={handleCreate}
           onCancel={() => setModal({ type: "closed" })}
+          onError={(message) => showToast(message, "error")}
         />
       </Modal>
 
@@ -328,6 +366,7 @@ export default function AdminContractsPage() {
             properties={properties}
             onSubmit={handleEdit}
             onCancel={() => setModal({ type: "closed" })}
+            onError={(message) => showToast(message, "error")}
           />
         </Modal>
       )}

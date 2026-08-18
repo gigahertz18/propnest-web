@@ -36,7 +36,9 @@ beforeEach(() => {
 
 describe("contractsBackend detail extraction", () => {
   it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Property already has an active contract" }, 409))
+    mockFetch.mockReturnValue(
+      mockResponse({ detail: "Property already has an active contract" }, 409)
+    )
     await expect(backendCreateContract("token", createPayload)).rejects.toThrow(ApiError)
     try {
       await backendCreateContract("token", createPayload)
@@ -50,7 +52,11 @@ describe("contractsBackend detail extraction", () => {
       mockResponse(
         {
           detail: [
-            { loc: ["body", "tenant_id"], msg: "Input should be a valid UUID", type: "uuid_parsing" },
+            {
+              loc: ["body", "tenant_id"],
+              msg: "Input should be a valid UUID",
+              type: "uuid_parsing",
+            },
           ],
         },
         422

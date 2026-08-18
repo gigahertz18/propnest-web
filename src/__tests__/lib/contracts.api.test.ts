@@ -198,7 +198,11 @@ describe("contractsApi.create", () => {
       mockResponse(
         {
           detail: [
-            { loc: ["body", "tenant_id"], msg: "Input should be a valid UUID", type: "uuid_parsing" },
+            {
+              loc: ["body", "tenant_id"],
+              msg: "Input should be a valid UUID",
+              type: "uuid_parsing",
+            },
             {
               loc: ["body", "rent_amount"],
               msg: "Input should be greater than 0",

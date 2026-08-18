@@ -100,18 +100,53 @@ describe("ContractForm — create mode", () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it("shows an error message when onSubmit throws", async () => {
+  it("calls onError with the message when onSubmit throws, instead of rendering it inline", async () => {
     const onSubmit = jest
       .fn()
       .mockRejectedValue(new Error("Property already has an active contract"))
-    render(<ContractForm properties={mockProperties} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    const onError = jest.fn()
+    render(
+      <ContractForm
+        properties={mockProperties}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+        onError={onError}
+      />
+    )
     fireEvent.change(screen.getByLabelText(/property/i), { target: { value: "prop-uuid-1" } })
     fireEvent.change(screen.getByLabelText(/tenant id/i), { target: { value: "tenant-uuid-1" } })
     fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: "2026-01-01" } })
     fireEvent.change(screen.getByLabelText(/^rent amount/i), { target: { value: "15000" } })
     fireEvent.click(screen.getByRole("button", { name: /create contract/i }))
     await waitFor(() => {
-      expect(screen.getByText("Property already has an active contract")).toBeInTheDocument()
+      expect(onError).toHaveBeenCalledWith("Property already has an active contract")
+    })
+    expect(screen.queryByText("Property already has an active contract")).not.toBeInTheDocument()
+  })
+
+  it("shows the human-readable rental type label, not the raw enum value, in the trigger", () => {
+    render(<ContractForm properties={mockProperties} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    expect(screen.getByText("Long term")).toBeInTheDocument()
+    expect(screen.queryByText("long_term")).not.toBeInTheDocument()
+  })
+
+  it("re-enables the form after onSubmit throws, so the user can retry", async () => {
+    const onSubmit = jest.fn().mockRejectedValue(new Error("Conflict"))
+    render(
+      <ContractForm
+        properties={mockProperties}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+        onError={jest.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText(/property/i), { target: { value: "prop-uuid-1" } })
+    fireEvent.change(screen.getByLabelText(/tenant id/i), { target: { value: "tenant-uuid-1" } })
+    fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: "2026-01-01" } })
+    fireEvent.change(screen.getByLabelText(/^rent amount/i), { target: { value: "15000" } })
+    fireEvent.click(screen.getByRole("button", { name: /create contract/i }))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create contract/i })).not.toBeDisabled()
     })
   })
 })
@@ -143,6 +178,19 @@ describe("ContractForm — edit mode", () => {
       />
     )
     expect(screen.getByText(/^status$/i)).toBeInTheDocument()
+  })
+
+  it("shows the human-readable status label, not the raw enum value, in the trigger", () => {
+    render(
+      <ContractForm
+        contract={mockContract}
+        properties={mockProperties}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    )
+    expect(screen.getByText("Active")).toBeInTheDocument()
+    expect(screen.queryByText("ACTIVE")).not.toBeInTheDocument()
   })
 
   it("sends only the changed fields on submit", async () => {

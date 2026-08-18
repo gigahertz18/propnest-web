@@ -11,7 +11,6 @@ import type {
 import type { Property } from "@/types/property"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Select,
   SelectContent,
@@ -23,14 +22,34 @@ import { Button } from "@/components/ui/button"
 
 // ─── Contract Form ─────────────────────────────────────────────────────────────
 
+// Single source of truth for enum → label — used for both the select trigger's
+// display value and its dropdown options, so they can't drift out of sync.
+const RENTAL_TYPE_LABELS: Record<RentalType, string> = {
+  long_term: "Long term",
+  short_term: "Short term",
+}
+
+const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
+  ACTIVE: "Active",
+  EXPIRED: "Expired",
+  TERMINATED: "Terminated",
+}
+
 interface ContractFormProps {
   contract?: Contract
   properties: Property[]
   onSubmit: (payload: ContractCreatePayload | ContractUpdatePayload) => Promise<void>
   onCancel: () => void
+  onError?: (message: string) => void
 }
 
-export function ContractForm({ contract, properties, onSubmit, onCancel }: ContractFormProps) {
+export function ContractForm({
+  contract,
+  properties,
+  onSubmit,
+  onCancel,
+  onError,
+}: ContractFormProps) {
   const isEdit = !!contract
 
   const [propertyId, setPropertyId] = useState(contract?.property_id ?? "")
@@ -43,7 +62,6 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
   const [bookingSource, setBookingSource] = useState(contract?.booking_source ?? "direct")
   const [status, setStatus] = useState<ContractStatus>(contract?.status ?? "ACTIVE")
 
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const requiredFilled =
@@ -51,7 +69,6 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
     setLoading(true)
     try {
       if (isEdit) {
@@ -78,7 +95,7 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
         await onSubmit(payload)
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      onError?.(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -86,12 +103,6 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="space-y-1.5">
         <Label htmlFor="contract_property_id">Property</Label>
         <select
@@ -132,11 +143,14 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
             disabled={loading}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{(value: RentalType) => RENTAL_TYPE_LABELS[value]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="long_term">Long term</SelectItem>
-              <SelectItem value="short_term">Short term</SelectItem>
+              {(Object.keys(RENTAL_TYPE_LABELS) as RentalType[]).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {RENTAL_TYPE_LABELS[value]}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -149,12 +163,16 @@ export function ContractForm({ contract, properties, onSubmit, onCancel }: Contr
               disabled={loading}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {(value: ContractStatus) => CONTRACT_STATUS_LABELS[value]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="EXPIRED">Expired</SelectItem>
-                <SelectItem value="TERMINATED">Terminated</SelectItem>
+                {(Object.keys(CONTRACT_STATUS_LABELS) as ContractStatus[]).map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {CONTRACT_STATUS_LABELS[value]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
