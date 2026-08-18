@@ -7,11 +7,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { getToken } from "@/lib/auth/session"
-import {
-  backendGetLease,
-  backendUpdateLease,
-  backendDeleteLease,
-} from "@/lib/api/leasesBackend"
+import { backendGetLease, backendUpdateLease, backendDeleteLease } from "@/lib/api/leasesBackend"
 import { ApiError } from "@/types"
 
 function unauthorized() {

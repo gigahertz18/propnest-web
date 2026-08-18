@@ -128,9 +128,7 @@ describe("leasesApi.create", () => {
   })
 
   it("throws ApiError on 400 when the rental type doesn't match the contract's terms", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: "Lease requires a long-term contract" }, 400)
-    )
+    mockFetch.mockReturnValue(mockResponse({ detail: "Lease requires a long-term contract" }, 400))
     await expect(leasesApi.create(createPayload)).rejects.toThrow(ApiError)
   })
 

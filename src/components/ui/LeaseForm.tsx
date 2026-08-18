@@ -54,8 +54,10 @@ const LEASE_STATUS_LABELS: Record<LeaseStatus, string> = {
 }
 
 function contractLabel(contract: Contract, properties: Property[], tenants: Tenant[]) {
-  const propertyName = properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
-  const tenantName = tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
+  const propertyName =
+    properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
+  const tenantName =
+    tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
   return `${propertyName} — ${tenantName}`
 }
 
@@ -190,8 +192,8 @@ export function LeaseForm({
         {noEligibleContracts && (
           <Alert variant="destructive">
             <AlertDescription>
-              No eligible long-term contracts. Create a long-term Contract without an existing
-              lease first.
+              No eligible long-term contracts. Create a long-term Contract without an existing lease
+              first.
             </AlertDescription>
           </Alert>
         )}
@@ -271,7 +273,11 @@ export function LeaseForm({
       {isEdit && (
         <div className="space-y-1.5">
           <Label>Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as LeaseStatus)} disabled={loading}>
+          <Select
+            value={status}
+            onValueChange={(v) => setStatus(v as LeaseStatus)}
+            disabled={loading}
+          >
             <SelectTrigger>
               <SelectValue>{(value: LeaseStatus) => LEASE_STATUS_LABELS[value]}</SelectValue>
             </SelectTrigger>

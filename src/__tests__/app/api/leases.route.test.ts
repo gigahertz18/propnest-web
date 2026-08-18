@@ -33,9 +33,15 @@ import { GET as getGET, PATCH, DELETE } from "@/app/api/leases/[id]/route"
 
 const mockList = backend.backendListLeases as jest.MockedFunction<typeof backend.backendListLeases>
 const mockGet = backend.backendGetLease as jest.MockedFunction<typeof backend.backendGetLease>
-const mockCreate = backend.backendCreateLease as jest.MockedFunction<typeof backend.backendCreateLease>
-const mockUpdate = backend.backendUpdateLease as jest.MockedFunction<typeof backend.backendUpdateLease>
-const mockDelete = backend.backendDeleteLease as jest.MockedFunction<typeof backend.backendDeleteLease>
+const mockCreate = backend.backendCreateLease as jest.MockedFunction<
+  typeof backend.backendCreateLease
+>
+const mockUpdate = backend.backendUpdateLease as jest.MockedFunction<
+  typeof backend.backendUpdateLease
+>
+const mockDelete = backend.backendDeleteLease as jest.MockedFunction<
+  typeof backend.backendDeleteLease
+>
 const mockGetToken = session.getToken as jest.MockedFunction<typeof session.getToken>
 
 const mockLease = {
@@ -190,14 +196,20 @@ describe("POST /api/leases", () => {
 describe("GET /api/leases/[id]", () => {
   it("returns 401 when no token", async () => {
     mockGetToken.mockResolvedValue(null)
-    const res = await getGET(makeIdRequest("lease-uuid-1", undefined, "GET"), idParams("lease-uuid-1"))
+    const res = await getGET(
+      makeIdRequest("lease-uuid-1", undefined, "GET"),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(401)
   })
 
   it("returns 200 with lease on success", async () => {
     mockGetToken.mockResolvedValue("token")
     mockGet.mockResolvedValue(mockLease)
-    const res = await getGET(makeIdRequest("lease-uuid-1", undefined, "GET"), idParams("lease-uuid-1"))
+    const res = await getGET(
+      makeIdRequest("lease-uuid-1", undefined, "GET"),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(mockLease)
   })
@@ -215,7 +227,10 @@ describe("GET /api/leases/[id]", () => {
 describe("PATCH /api/leases/[id]", () => {
   it("returns 401 when no token", async () => {
     mockGetToken.mockResolvedValue(null)
-    const res = await PATCH(makeIdRequest("lease-uuid-1", { status: "ENDED" }), idParams("lease-uuid-1"))
+    const res = await PATCH(
+      makeIdRequest("lease-uuid-1", { status: "ENDED" }),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(401)
   })
 
@@ -223,7 +238,10 @@ describe("PATCH /api/leases/[id]", () => {
     mockGetToken.mockResolvedValue("token")
     const updated = { ...mockLease, status: "ENDED" as const }
     mockUpdate.mockResolvedValue(updated)
-    const res = await PATCH(makeIdRequest("lease-uuid-1", { status: "ENDED" }), idParams("lease-uuid-1"))
+    const res = await PATCH(
+      makeIdRequest("lease-uuid-1", { status: "ENDED" }),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual(updated)
   })
@@ -257,14 +275,20 @@ describe("PATCH /api/leases/[id]", () => {
 describe("DELETE /api/leases/[id]", () => {
   it("returns 401 when no token", async () => {
     mockGetToken.mockResolvedValue(null)
-    const res = await DELETE(makeIdRequest("lease-uuid-1", undefined, "DELETE"), idParams("lease-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("lease-uuid-1", undefined, "DELETE"),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(401)
   })
 
   it("returns 204 on successful delete", async () => {
     mockGetToken.mockResolvedValue("token")
     mockDelete.mockResolvedValue(undefined)
-    const res = await DELETE(makeIdRequest("lease-uuid-1", undefined, "DELETE"), idParams("lease-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("lease-uuid-1", undefined, "DELETE"),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(204)
   })
 
@@ -286,7 +310,10 @@ describe("DELETE /api/leases/[id]", () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")
     mockDelete.mockRejectedValue(new Error("Unexpected"))
-    const res = await DELETE(makeIdRequest("lease-uuid-1", undefined, "DELETE"), idParams("lease-uuid-1"))
+    const res = await DELETE(
+      makeIdRequest("lease-uuid-1", undefined, "DELETE"),
+      idParams("lease-uuid-1")
+    )
     expect(res.status).toBe(500)
     errorSpy.mockRestore()
   })

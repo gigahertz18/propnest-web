@@ -80,6 +80,5 @@ export const leasesApi = {
       body: JSON.stringify(payload),
     }),
 
-  delete: (id: string): Promise<void> =>
-    apiFetch<void>(`/api/leases/${id}`, { method: "DELETE" }),
+  delete: (id: string): Promise<void> => apiFetch<void>(`/api/leases/${id}`, { method: "DELETE" }),
 }

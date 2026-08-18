@@ -74,7 +74,11 @@ describe("leasesBackend detail extraction", () => {
       mockResponse(
         {
           detail: [
-            { loc: ["body", "due_day"], msg: "Input should be less than or equal to 31", type: "less_than_equal" },
+            {
+              loc: ["body", "due_day"],
+              msg: "Input should be less than or equal to 31",
+              type: "less_than_equal",
+            },
           ],
         },
         422
@@ -219,7 +223,11 @@ describe("leasesBackend CRUD", () => {
 
   it("backendDeleteLease resolves without a body on 204", async () => {
     mockFetch.mockReturnValue(
-      Promise.resolve({ ok: true, status: 204, json: () => Promise.reject(new Error("no body")) } as Response)
+      Promise.resolve({
+        ok: true,
+        status: 204,
+        json: () => Promise.reject(new Error("no body")),
+      } as Response)
     )
     await expect(backendDeleteLease("token", "lease-uuid-1")).resolves.toBeUndefined()
     expect(mockFetch).toHaveBeenCalledWith(

@@ -47,9 +47,7 @@ type ModalState =
  */
 export function getEligibleContracts(contracts: Contract[], leases: Lease[]): Contract[] {
   const contractIdsWithLease = new Set(leases.map((l) => l.contract_id))
-  return contracts.filter(
-    (c) => c.rental_type === "long_term" && !contractIdsWithLease.has(c.id)
-  )
+  return contracts.filter((c) => c.rental_type === "long_term" && !contractIdsWithLease.has(c.id))
 }
 
 function formatDate(iso: string) {
@@ -147,8 +145,10 @@ export default function AdminLeasesPage() {
   function contractLabel(contractId: string) {
     const contract = contracts.find((c) => c.id === contractId)
     if (!contract) return contractId
-    const propertyName = properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
-    const tenantName = tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
+    const propertyName =
+      properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
+    const tenantName =
+      tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
     return `${propertyName} — ${tenantName}`
   }
 
@@ -290,7 +290,9 @@ export default function AdminLeasesPage() {
         {!fetching && !fetchError && leases.length === 0 && (
           <div className="flex flex-col items-center rounded-xl border bg-white py-16 text-center">
             <p className="text-sm font-medium">No leases yet</p>
-            <p className="text-muted-foreground mt-1 text-sm">Add your first lease to get started.</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Add your first lease to get started.
+            </p>
           </div>
         )}
 
