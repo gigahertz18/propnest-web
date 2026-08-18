@@ -14,13 +14,14 @@ Implemented today:
 - dashboard shell
 - admin properties
 - admin contracts
+- admin tenants
 - admin users
 - property image operations
 - shared UI primitives and forms
 - same-origin Next.js API routes
 - role-aware client state
 
-The current repository is intentionally lean. Its README describes end-to-end exercise of authentication, properties, tenants, contracts, and documents. Contract screens are now implemented under `/admin/contracts`; the route tree does not yet expose dedicated tenant screens.
+The current repository is intentionally lean. Its README describes end-to-end exercise of authentication, properties, tenants, contracts, and documents. Contract and Tenant screens are now implemented under `/admin/contracts` and `/admin/tenants` respectively.
 
 ## Phase 1 frontend
 

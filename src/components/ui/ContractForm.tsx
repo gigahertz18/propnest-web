@@ -9,6 +9,7 @@ import type {
   ContractStatus,
 } from "@/types/contract"
 import type { Property } from "@/types/property"
+import type { Tenant } from "@/types/tenant"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -18,6 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Combobox,
+  ComboboxInputGroup,
+  ComboboxInput,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxList,
+  ComboboxItem,
+} from "@/components/ui/combobox"
 import { Button } from "@/components/ui/button"
 
 // ─── Contract Form ─────────────────────────────────────────────────────────────
@@ -38,6 +49,7 @@ const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
 interface ContractFormProps {
   contract?: Contract
   properties: Property[]
+  tenants: Tenant[]
   onSubmit: (payload: ContractCreatePayload | ContractUpdatePayload) => Promise<void>
   onCancel: () => void
   onError?: (message: string) => void
@@ -46,6 +58,7 @@ interface ContractFormProps {
 export function ContractForm({
   contract,
   properties,
+  tenants,
   onSubmit,
   onCancel,
   onError,
@@ -123,15 +136,29 @@ export function ContractForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="contract_tenant_id">Tenant ID</Label>
-        <Input
-          id="contract_tenant_id"
-          value={tenantId}
-          onChange={(e) => setTenantId(e.target.value)}
-          placeholder="Tenant UUID"
-          disabled={loading}
-          required
-        />
+        <Label htmlFor="contract_tenant_id">Tenant</Label>
+        <Combobox
+          items={tenants}
+          value={tenants.find((t) => t.id === tenantId) ?? null}
+          onValueChange={(tenant: Tenant | null) => setTenantId(tenant?.id ?? "")}
+          itemToStringLabel={(tenant: Tenant) => tenant.full_name}
+          disabled={loading || isEdit}
+        >
+          <ComboboxInputGroup>
+            <ComboboxInput id="contract_tenant_id" placeholder="Search tenants by name…" required />
+            <ComboboxClear />
+          </ComboboxInputGroup>
+          <ComboboxContent>
+            <ComboboxEmpty>No tenants found.</ComboboxEmpty>
+            <ComboboxList>
+              {(tenant: Tenant) => (
+                <ComboboxItem key={tenant.id} value={tenant}>
+                  {tenant.full_name}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

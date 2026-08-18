@@ -5,12 +5,8 @@ import Link from "next/link"
 
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
-import type { Contract, ContractCreatePayload, ContractUpdatePayload } from "@/types/contract"
-import type { Property } from "@/types/property"
-import type { Tenant } from "@/types/tenant"
+import type { Tenant, TenantCreatePayload, TenantUpdatePayload } from "@/types/tenant"
 import { ApiError } from "@/types"
-import { contractsApi } from "@/lib/api/contracts"
-import { propertiesApi } from "@/lib/api/properties"
 import { tenantsApi } from "@/lib/api/tenants"
 import Modal from "@/components/ui/Modal"
 import { Button } from "@/components/ui/button"
@@ -25,51 +21,37 @@ import {
 } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-import { ContractForm } from "@/components/ui/ContractForm"
+import { TenantForm } from "@/components/ui/TenantForm"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ModalState =
   | { type: "closed" }
   | { type: "create" }
-  | { type: "edit"; contract: Contract }
-  | { type: "delete"; contract: Contract }
+  | { type: "edit"; tenant: Tenant }
+  | { type: "delete"; tenant: Tenant }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
-function StatusBadge({ status }: { status: Contract["status"] }) {
-  const styles: Record<Contract["status"], string> = {
-    ACTIVE: "bg-green-50 text-green-700",
-    EXPIRED: "bg-orange-50 text-orange-700",
-    TERMINATED: "bg-neutral-100 text-neutral-500",
-  }
+function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
-      className={["inline-flex rounded-full px-2.5 py-1 text-xs font-medium", styles[status]].join(
-        " "
-      )}
+      className={[
+        "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+        isActive ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500",
+      ].join(" ")}
     >
-      {status.charAt(0) + status.slice(1).toLowerCase()}
+      {isActive ? "Active" : "Inactive"}
     </span>
   )
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-export default function AdminContractsPage() {
+export default function AdminTenantsPage() {
   const { isAdmin, isAtLeastManager, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const [contracts, setContracts] = useState<Contract[]>([])
-  const [properties, setProperties] = useState<Property[]>([])
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [fetching, setFetching] = useState(true)
@@ -105,16 +87,10 @@ export default function AdminContractsPage() {
     setFetching(true)
     setFetchError(null)
     try {
-      const [contractList, propertyList, tenantList] = await Promise.all([
-        contractsApi.list(),
-        propertiesApi.list(),
-        tenantsApi.list(),
-      ])
-      setContracts(contractList)
-      setProperties(propertyList)
+      const tenantList = await tenantsApi.list()
       setTenants(tenantList)
     } catch (err) {
-      setFetchError(err instanceof ApiError ? err.detail : "Failed to load contracts")
+      setFetchError(err instanceof ApiError ? err.detail : "Failed to load tenants")
     } finally {
       setFetching(false)
     }
@@ -125,32 +101,28 @@ export default function AdminContractsPage() {
     if (!authLoading && isAtLeastManager) loadData()
   }, [authLoading, isAtLeastManager, loadData])
 
-  function propertyName(propertyId: string) {
-    return properties.find((p) => p.id === propertyId)?.name ?? propertyId
-  }
-
-  async function handleCreate(payload: ContractCreatePayload | ContractUpdatePayload) {
-    const created = await contractsApi.create(payload as ContractCreatePayload)
-    setContracts((prev) => [created, ...prev])
+  async function handleCreate(payload: TenantCreatePayload | TenantUpdatePayload) {
+    const created = await tenantsApi.create(payload as TenantCreatePayload)
+    setTenants((prev) => [created, ...prev])
     setModal({ type: "closed" })
-    showToast("Contract created")
+    showToast("Tenant created")
   }
 
-  async function handleEdit(payload: ContractCreatePayload | ContractUpdatePayload) {
+  async function handleEdit(payload: TenantCreatePayload | TenantUpdatePayload) {
     if (modal.type !== "edit") return
-    const updated = await contractsApi.update(modal.contract.id, payload as ContractUpdatePayload)
-    setContracts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+    const updated = await tenantsApi.update(modal.tenant.id, payload as TenantUpdatePayload)
+    setTenants((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
     setModal({ type: "closed" })
-    showToast("Contract updated")
+    showToast("Tenant updated")
   }
 
   async function handleDelete() {
     if (modal.type !== "delete") return
     setDeleteLoading(true)
     try {
-      await contractsApi.delete(modal.contract.id)
-      setContracts((prev) => prev.filter((c) => c.id !== modal.contract.id))
-      showToast("Contract deleted")
+      await tenantsApi.delete(modal.tenant.id)
+      setTenants((prev) => prev.filter((t) => t.id !== modal.tenant.id))
+      showToast("Tenant deleted")
       setModal({ type: "closed" })
     } catch (err) {
       showToast(err instanceof ApiError ? err.detail : "Delete failed", "error")
@@ -213,16 +185,16 @@ export default function AdminContractsPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold">Contracts</h1>
+              <h1 className="text-xl font-semibold">Tenants</h1>
               <p className="text-muted-foreground mt-0.5 text-sm">
-                Manage rental contracts for your properties
+                Manage tenant records for your properties
               </p>
             </div>
             <Button
               onClick={() => setModal({ type: "create" })}
               className="bg-gradient-to-r from-[#E61E4D] via-[#E31C5F] to-[#D70466] hover:opacity-95"
             >
-              + Add contract
+              + Add tenant
             </Button>
           </div>
         </div>
@@ -257,52 +229,46 @@ export default function AdminContractsPage() {
         )}
 
         {/* Empty state */}
-        {!fetching && !fetchError && contracts.length === 0 && (
+        {!fetching && !fetchError && tenants.length === 0 && (
           <div className="flex flex-col items-center rounded-xl border bg-white py-16 text-center">
-            <p className="text-sm font-medium">No contracts yet</p>
+            <p className="text-sm font-medium">No tenants yet</p>
             <p className="text-muted-foreground mt-1 text-sm">
-              Add your first contract to get started.
+              Add your first tenant to get started.
             </p>
           </div>
         )}
 
         {/* Table */}
-        {!fetching && contracts.length > 0 && (
+        {!fetching && tenants.length > 0 && (
           <div className="overflow-hidden rounded-xl border bg-white">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Property</TableHead>
-                  <TableHead>Rental type</TableHead>
-                  <TableHead>Start date</TableHead>
-                  <TableHead>Rent</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-[80px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {contracts.map((contract) => (
-                  <TableRow key={contract.id}>
-                    <TableCell className="text-sm font-medium">
-                      {propertyName(contract.property_id)}
-                    </TableCell>
-                    <TableCell className="text-sm capitalize">
-                      {contract.rental_type.replace("_", " ")}
-                    </TableCell>
+                {tenants.map((tenant) => (
+                  <TableRow key={tenant.id}>
+                    <TableCell className="text-sm font-medium">{tenant.full_name}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{tenant.email}</TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(contract.start_date)}
+                      {tenant.phone_number}
                     </TableCell>
-                    <TableCell className="text-sm">{contract.rent_amount}</TableCell>
                     <TableCell>
-                      <StatusBadge status={contract.status} />
+                      <StatusBadge isActive={tenant.is_active} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setModal({ type: "edit", contract })}
-                          aria-label={`Edit contract ${contract.id}`}
+                          onClick={() => setModal({ type: "edit", tenant })}
+                          aria-label={`Edit tenant ${tenant.id}`}
                         >
                           <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                             <path
@@ -318,9 +284,9 @@ export default function AdminContractsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setModal({ type: "delete", contract })}
+                            onClick={() => setModal({ type: "delete", tenant })}
                             className="hover:bg-red-50 hover:text-red-600"
-                            aria-label={`Delete contract ${contract.id}`}
+                            aria-label={`Delete tenant ${tenant.id}`}
                           >
                             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                               <path
@@ -342,7 +308,7 @@ export default function AdminContractsPage() {
 
             <div className="border-t bg-neutral-50 px-6 py-3">
               <p className="text-muted-foreground text-xs">
-                {contracts.length} {contracts.length === 1 ? "contract" : "contracts"}
+                {tenants.length} {tenants.length === 1 ? "tenant" : "tenants"}
               </p>
             </div>
           </div>
@@ -353,11 +319,9 @@ export default function AdminContractsPage() {
       <Modal
         open={modal.type === "create"}
         onClose={() => setModal({ type: "closed" })}
-        title="Add contract"
+        title="Add tenant"
       >
-        <ContractForm
-          properties={properties}
-          tenants={tenants}
+        <TenantForm
           onSubmit={handleCreate}
           onCancel={() => setModal({ type: "closed" })}
           onError={(message) => showToast(message, "error")}
@@ -366,11 +330,9 @@ export default function AdminContractsPage() {
 
       {/* Edit modal */}
       {modal.type === "edit" && (
-        <Modal open onClose={() => setModal({ type: "closed" })} title="Edit contract">
-          <ContractForm
-            contract={modal.contract}
-            properties={properties}
-            tenants={tenants}
+        <Modal open onClose={() => setModal({ type: "closed" })} title="Edit tenant">
+          <TenantForm
+            tenant={modal.tenant}
             onSubmit={handleEdit}
             onCancel={() => setModal({ type: "closed" })}
             onError={(message) => showToast(message, "error")}
@@ -385,12 +347,12 @@ export default function AdminContractsPage() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete contract</DialogTitle>
+            <DialogTitle>Delete tenant</DialogTitle>
           </DialogHeader>
           {modal.type === "delete" && (
             <div className="space-y-5">
               <p className="text-muted-foreground text-sm">
-                Are you sure you want to delete this contract? This action cannot be undone.
+                Are you sure you want to delete this tenant? This action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <Button

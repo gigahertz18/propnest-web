@@ -4,7 +4,7 @@
 
 ## Current state
 
-The current dashboard is primarily a module/navigation surface. Properties are available while Tenants and Contracts are presented as coming-soon placeholders. fileciteturn5file13
+The current dashboard is primarily a module/navigation surface. Properties, Contracts, and Tenants are all live links into their respective admin screens; no modules remain as coming-soon placeholders.
 
 ## Phase 2 target
 

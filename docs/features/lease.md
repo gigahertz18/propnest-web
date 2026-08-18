@@ -6,7 +6,7 @@
 
 A Lease holds long-term rental billing terms associated 1:1 with a Contract.
 
-The backend roadmap explicitly separates Lease from Contract so Contract can remain neutral across long- and short-term rentals. A Lease must only attach to a `long_term` Contract. fileciteturn3file0
+The backend roadmap explicitly separates Lease from Contract so Contract can remain neutral across long- and short-term rentals. A Lease must only attach to a `long_term` Contract.
 
 ## Routes
 
