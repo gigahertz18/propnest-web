@@ -157,6 +157,32 @@ export default async function DashboardPage() {
               <p className="mt-0.5 text-xs text-[#717171]">Manage active lease terms</p>
             </Link>
           )}
+
+          {/* Billing & Payments — managers and admins */}
+          {isAtLeastManager && (
+            <Link
+              href="/admin/billing"
+              className="group rounded-2xl border border-[#EBEBEB] bg-white p-6 transition-shadow hover:shadow-[0_6px_16px_rgba(0,0,0,0.08)]"
+            >
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFF8E1]">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path
+                    d="M9 2v14M12.5 5.5c0-1.4-1.6-2.5-3.5-2.5s-3.5 1.1-3.5 2.5S6.6 8 9 8s3.5 1.1 3.5 2.5S10.9 13 9 13s-3.5-1.1-3.5-2.5"
+                    stroke="#B7791F"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-[#222222] transition-colors group-hover:text-[#B7791F]">
+                Billing &amp; Payments
+              </p>
+              <p className="mt-0.5 text-xs text-[#717171]">
+                View billing status and record payments
+              </p>
+            </Link>
+          )}
         </div>
       </main>
     </div>
