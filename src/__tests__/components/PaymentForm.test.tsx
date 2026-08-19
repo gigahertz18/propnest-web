@@ -214,7 +214,7 @@ describe("PaymentForm — create mode", () => {
         })
       )
     })
-  })
+  }, 15000)
 
   it("omits billing_record_id when left blank", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)

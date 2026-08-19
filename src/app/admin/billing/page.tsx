@@ -306,7 +306,10 @@ export default function AdminBillingPage() {
         setLeaseBillingHistory((prev) => [...prev, ...generated])
       }
       const detail = err instanceof ApiError ? err.detail : "Failed to generate billing record"
-      showToast(generated.length > 0 ? `Generated ${generated.length} of ${count} — ${detail}` : detail, "error")
+      showToast(
+        generated.length > 0 ? `Generated ${generated.length} of ${count} — ${detail}` : detail,
+        "error"
+      )
     } finally {
       setBillingActionLoading(false)
     }
@@ -551,8 +554,8 @@ export default function AdminBillingPage() {
                   disabled={billingActionLoading}
                 />
                 <p className="text-muted-foreground text-xs">
-                  Each period picks up exactly where the last one ended — entering 5 generates
-                  the lease&apos;s next 5 periods in sequence, not a specific month.
+                  Each period picks up exactly where the last one ended — entering 5 generates the
+                  lease&apos;s next 5 periods in sequence, not a specific month.
                 </p>
               </div>
               <Button type="submit" size="sm" disabled={billingActionLoading || !selectedLease}>
