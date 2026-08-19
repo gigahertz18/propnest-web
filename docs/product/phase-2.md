@@ -37,25 +37,39 @@ A Lease should only be creatable for long-term Contracts.
 
 ## Billing UI
 
-Planned:
+Done:
 
-- billing records
+- generate the next N billing periods for a lease (a "periods to generate" count, default 1 —
+  not a caller-picked date/month, since `propnest-api` computes each period's `period_start`
+  itself: `lease.start_date` for the first record, otherwise the previous record's
+  `period_end + 1 day`, so periods are always contiguous and never precede the lease's start)
+- re-evaluate/refresh a billing record's overdue status and balance on demand
+- billing records (persisted list/history per lease, via `GET /billing-records/`)
 - current balance
 - payment state
 - overdue state
 - partial payment
-- payment history
+
+Unblocked: `propnest-api`'s `billing_records.py` (commit `e5ebb15`, "Added implementation for
+list and get billing records") now also exposes `GET /billing-records/?lease_id=` (paginated
+list) and `GET /billing-records/{id}`, so the billing-record history view no longer depends on
+having generated/refreshed a record in the current session.
+
+Planned:
+
+- payment history (per billing record, surfaced alongside the lease's billing history)
 
 ## Payment UI
 
-Planned:
+Done:
 
 - record payment
 - method
 - reference number
 - amount
 - applied billing record
-- resulting status
+- resulting status (the targeted billing record is re-evaluated and its updated status shown
+  immediately after a payment is recorded)
 
 ## Receipt UI
 
