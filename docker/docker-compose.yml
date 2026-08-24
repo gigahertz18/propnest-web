@@ -1,8 +1,8 @@
 services:
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       target: dev
     container_name: propnest_frontend
     ports:
@@ -15,7 +15,7 @@ services:
       - BACKEND_URL=${BACKEND_URL:-http://host.docker.internal:8000}
       - NODE_ENV=development
     volumes:
-      - .:/app
+      - ..:/app
       - /app/node_modules
       - /app/.next
     extra_hosts:
