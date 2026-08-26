@@ -1,6 +1,6 @@
 ENV ?= dev
 
-COMPOSE_FILE = docker-compose.yml
+COMPOSE_FILE = docker/docker-compose.yml
 COMPOSE      = ENV=$(ENV) docker compose -f $(COMPOSE_FILE)
 
 # Test commands always inject ENV=unittest into the exec'd process

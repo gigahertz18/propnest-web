@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/combobox"
 
 import { PaymentForm } from "@/components/ui/PaymentForm"
+import { ReceiptHistory } from "@/components/ui/ReceiptHistory"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,19 +53,39 @@ type ModalState =
   | { type: "create" }
   | { type: "edit"; payment: Payment }
   | { type: "delete"; payment: Payment }
+  | { type: "receipts"; payment: Payment }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Amount strings are fixed at 2 decimal places (mirrors the backend's
+// Numeric(12, 2) columns) — converting to integer cents avoids floating
+// point drift when summing payments.
+function toCents(amount: string): number {
+  return Math.round(parseFloat(amount) * 100)
+}
+
+function centsToAmount(cents: number): string {
+  return (cents / 100).toFixed(2)
+}
+
 /**
  * The backend's BillingRecordResponse doesn't expose a single "current
- * balance" field — it exposes amount_due, status, and overpaid_amount — so
- * the balance shown in the UI is derived client-side from those.
+ * balance" field — it exposes amount_due, late_fee_amount_charged, status,
+ * and overpaid_amount — so the balance shown in the UI is derived
+ * client-side from those plus the payments already recorded against this
+ * billing record, mirroring the backend's own cumulative-payment logic in
+ * LeaseBillingService.apply_payment.
  */
-export function billingBalance(record: BillingRecord): string {
+export function billingBalance(record: BillingRecord, payments: Payment[]): string {
   if (record.status === "paid" || record.status === "written_off") {
     return record.overpaid_amount ? `-${record.overpaid_amount}` : "0.00"
   }
-  return record.amount_due
+  const totalDueCents =
+    toCents(record.amount_due) + toCents(record.late_fee_amount_charged ?? "0.00")
+  const paidCents = payments
+    .filter((p) => p.billing_record_id === record.id && p.status !== "VOIDED")
+    .reduce((sum, p) => sum + toCents(p.amount), 0)
+  return centsToAmount(totalDueCents - paidCents)
 }
 
 /**
@@ -640,7 +661,7 @@ export default function AdminBillingPage() {
                 </div>
                 <div>
                   <dt className="text-neutral-400">Balance</dt>
-                  <dd>{billingBalance(lastBillingRecord)}</dd>
+                  <dd>{billingBalance(lastBillingRecord, payments)}</dd>
                 </div>
               </dl>
             </div>
@@ -679,7 +700,9 @@ export default function AdminBillingPage() {
                             {formatDate(record.due_date)}
                           </TableCell>
                           <TableCell className="text-sm">{record.amount_due}</TableCell>
-                          <TableCell className="text-sm">{billingBalance(record)}</TableCell>
+                          <TableCell className="text-sm">
+                            {billingBalance(record, payments)}
+                          </TableCell>
                           <TableCell>
                             <BillingStatusBadge status={record.status} />
                           </TableCell>
@@ -779,6 +802,28 @@ export default function AdminBillingPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => setModal({ type: "receipts", payment })}
+                              aria-label={`View receipts for payment ${payment.id}`}
+                            >
+                              <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                                <path
+                                  d="M3.5 1.5h6l2.5 2.5v9a1 1 0 01-1 1h-7.5a1 1 0 01-1-1v-10.5a1 1 0 011-1z"
+                                  stroke="currentColor"
+                                  strokeWidth="1.3"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <path
+                                  d="M5 7.5h5M5 9.5h5M5 11.5h3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.3"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => setModal({ type: "edit", payment })}
                               aria-label={`Edit payment ${payment.id}`}
                             >
@@ -859,6 +904,21 @@ export default function AdminBillingPage() {
             billingRecords={knownBillingRecords}
             onSubmit={handleEdit}
             onCancel={() => setModal({ type: "closed" })}
+            onError={(message) => showToast(message, "error")}
+          />
+        </Modal>
+      )}
+
+      {/* Receipts */}
+      {modal.type === "receipts" && (
+        <Modal open onClose={() => setModal({ type: "closed" })} title="Receipts">
+          <ReceiptHistory
+            payment={modal.payment}
+            contractLabel={
+              contractOf(modal.payment.contract_id)
+                ? contractLabel(contractOf(modal.payment.contract_id)!, properties, tenants)
+                : modal.payment.contract_id
+            }
             onError={(message) => showToast(message, "error")}
           />
         </Modal>

@@ -44,6 +44,17 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   REFUNDED: "Refunded",
 }
 
+// Values must stay lowercase, matching PAYMENT_METHODS in the backend's
+// app/models/payment.py exactly — the DB's ck_payment_method CHECK
+// constraint is case-sensitive.
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  cash: "Cash",
+  "bank transfer": "Bank transfer",
+  gcash: "GCash",
+  maya: "Maya",
+  check: "Check",
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
@@ -255,13 +266,29 @@ export function PaymentForm({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="payment_method">Method</Label>
-          <Input
-            id="payment_method"
-            value={paymentMethod ?? ""}
-            onChange={(e) => setPaymentMethod(e.target.value)}
-            placeholder="gcash, cash, bank transfer…"
+          <Select
+            value={paymentMethod || "__unspecified__"}
+            onValueChange={(v: string | null) =>
+              setPaymentMethod(!v || v === "__unspecified__" ? "" : v)
+            }
             disabled={loading}
-          />
+          >
+            <SelectTrigger id="payment_method">
+              <SelectValue>
+                {(value: string) =>
+                  value === "__unspecified__" ? "Not specified" : PAYMENT_METHOD_LABELS[value]
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__unspecified__">Not specified</SelectItem>
+              {Object.keys(PAYMENT_METHOD_LABELS).map((value) => (
+                <SelectItem key={value} value={value}>
+                  {PAYMENT_METHOD_LABELS[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="payment_reference_number">Reference number</Label>
