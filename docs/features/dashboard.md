@@ -72,5 +72,4 @@ on the composed endpoint.)
 
 ## Backend dependency
 
-This feature is blocked on the backend Dashboard aggregation endpoints described in the Phase 2 roadmap. Do not invent endpoint paths until that contract is finalized.
 No longer blocked - the Phase 2 aggregation endpoint (`GET /api/v1/dashboard/`, `DashboardSummaryResponse`) is finalzied and implemented against.
