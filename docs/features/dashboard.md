@@ -1,10 +1,12 @@
 # Dashboard — Frontend Feature Specification
 
-**Status:** Partially implemented / Planned expansion
+**Status:** Implemented (Phase 2)
 
 ## Current state
 
-The current dashboard is primarily a module/navigation surface. Properties, Contracts, and Tenants are all live links into their respective admin screens; no modules remain as coming-soon placeholders.
+The dashboard combines the existing role-gated navigation cards with live operational metrics sourced from propnest-api's single composed
+aggregation endpoint (`GET /dashboard/`): Collected This Month, Outstanding, Late Payments, Vacant Units, Expiring Leases, and Recent
+Payments. See `DashboardMetrics.tsx`, `dashboardBackend.ts`, `dashboard.ts`, and `app/api/dashboard/route.ts`.
 
 ## Phase 2 target
 
@@ -35,7 +37,9 @@ Dashboard
   +-- recent payments
 ```
 
-Each metric should be independently loadable so one failing query does not blank the entire page.
+The backend exposes one composed endpoint rather than one per metric, so in practice all six metrics load and error as
+a single unit (see DashboardMetrics.tsx) rather than independently per card. This differs from the recommendation above,
+which was written before shape was finalized.
 
 ## Loading
 
@@ -54,7 +58,8 @@ Empty data should be presented as valid product state, not an error.
 
 ## Error handling
 
-An individual aggregation failure should show an inline retryable error for that section.
+A fialed fetch shows a single inline retryable error for the whole metrics block (not per-section - see note above
+on the composed endpoint.)
 
 ## Acceptance criteria
 
@@ -62,8 +67,10 @@ An individual aggregation failure should show an inline retryable error for that
 - Metrics match backend aggregation results.
 - Dates/currency are displayed consistently.
 - No frontend-side reimplementation of financial aggregation logic.
-- Recent payments link to payment/receipt context where the API supports it.
+- Recent payments link to payment/receipt context where the API supports it. **Not yet implemented:** `admin/billing/page.tsx` has no query-param-driven modal state today, so Recent Payments links to `/admin/billing` generally rather than deep-linking to a specific payment/receipt. Tracked as a separate follow-up.
+- Expiring lease entries currently show a raw truncated lease ID rather than a resolved property/tenant name - the sameidentifier-surfaced-as-is tradeoff already accepted for `tenant_id` elsewhere in this app. Also tracked as a follow-up, not a defect in this change.
 
 ## Backend dependency
 
 This feature is blocked on the backend Dashboard aggregation endpoints described in the Phase 2 roadmap. Do not invent endpoint paths until that contract is finalized.
+No longer blocked - the Phase 2 aggregation endpoint (`GET /api/v1/dashboard/`, `DashboardSummaryResponse`) is finalzied and implemented against.
