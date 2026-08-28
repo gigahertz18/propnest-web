@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth/session"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import LogoutButton from "@/components/layout/LogoutButton"
+import { DashboardMetrics } from "@/components/ui/DashboardMetrics"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -32,6 +33,8 @@ export default async function DashboardPage() {
           Welcome back, {user.full_name.split(" ")[0]}
         </h1>
         <p className="mb-10 text-sm text-[#717171]">What would you like to manage today?</p>
+
+        <DashboardMetrics />
 
         {/* Quick nav cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
