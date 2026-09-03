@@ -49,29 +49,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: |
-          npm ci
-          npm install \
-            clsx \
-            class-variance-authority \
-            tailwindcss-animate \
-            lucide-react
-          npm install --save-dev \
-            jest \
-            jest-environment-jsdom \
-            @testing-library/react \
-            @testing-library/jest-dom \
-            @testing-library/user-event \
-            @types/jest \
-            eslint \
-            eslint-config-next \
-            @next/eslint-plugin-next \
-            @typescript-eslint/parser \
-            @typescript-eslint/eslint-plugin \
-            eslint-plugin-react \
-            eslint-plugin-react-hooks \
-            prettier \
-            prettier-plugin-tailwindcss
+        run: npm ci
 
       - name: Lint (ESLint)
         run: ENV=unittest make lint-fe

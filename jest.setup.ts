@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom"
 import { act } from "@testing-library/react"
+import { configure } from "@testing-library/dom"
+
+// Base UI's Combobox/Select popups are CPU-bound-slow to open under jsdom
+// (tens of seconds, not a hang) — well past the default 1000ms `waitFor`/
+// `findBy*` polling timeout.
+configure({ asyncUtilTimeout: 20000 })
 
 Object.defineProperty(URL, "createObjectURL", {
   writable: true,

@@ -35,8 +35,15 @@ fe-shell:
 	$(COMPOSE) exec -it frontend sh
 
 # ─── Frontend Tests ───────────────────────────────────────
+# --maxWorkers=1: several suites drive Base UI Combobox/Select popups, which
+# are CPU-bound-slow to open under jsdom (tens of seconds, not a hang). Running
+# multiple such suites in parallel across Jest workers causes them to compete
+# for CPU and occasionally exceed even a generous per-test timeout. Serializing
+# removes that contention entirely (confirmed: parallel runs flake ~1-3
+# tests/658 under load; serial runs are 100% reliable) at the cost of a longer
+# total run.
 test-fe:
-	$(TEST_EXEC) frontend npx jest --passWithNoTests
+	$(TEST_EXEC) frontend npx jest --passWithNoTests --maxWorkers=1
 
 test-fe-watch:
 	$(TEST_EXEC) frontend npx jest --watch
