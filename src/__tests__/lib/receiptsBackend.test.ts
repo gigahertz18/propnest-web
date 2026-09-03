@@ -94,50 +94,71 @@ describe("receiptsBackend CRUD", () => {
 })
 
 describe("backendGetReceiptFile", () => {
-  const mockDocument = {
-    id: "document-uuid-1",
-    file_name: "receipt-1.pdf",
-    file_type: "application/pdf",
-    file_url: "https://minio.internal/receipts/receipt-1.pdf",
+  function mockFileResponse(
+    ok: boolean,
+    { headers = [], status = 200 }: { headers?: [string, string][]; status?: number } = {}
+  ) {
+    return Promise.resolve({
+      ok,
+      status,
+      headers: new Map(headers) as unknown as Headers,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+      json: () => Promise.reject(new Error("not json")),
+    } as unknown as Response)
   }
 
-  it("resolves the receipt's document, then fetches the file bytes from storage", async () => {
-    mockFetch
-      .mockReturnValueOnce(mockResponse(mockReceipt)) // GET /receipts/{id}
-      .mockReturnValueOnce(mockResponse(mockDocument)) // GET /documents/{document_id}
-      .mockReturnValueOnce(
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          headers: new Map([["content-type", "application/pdf"]]) as unknown as Headers,
-          arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-        } as unknown as Response)
-      )
+  it("fetches the file with a single authenticated call to the download endpoint", async () => {
+    mockFetch.mockReturnValueOnce(
+      mockFileResponse(true, {
+        headers: [
+          ["content-type", "application/pdf"],
+          ["content-disposition", 'attachment; filename="receipt-1.pdf"'],
+        ],
+      })
+    )
 
     const result = await backendGetReceiptFile("token", "receipt-uuid-1")
 
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("/receipts/receipt-uuid-1"),
-      expect.any(Object)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/receipts/receipt-uuid-1/download"),
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer token" }),
+      })
     )
-    expect(mockFetch).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("/documents/document-uuid-1"),
-      expect.any(Object)
-    )
-    expect(mockFetch).toHaveBeenNthCalledWith(3, mockDocument.file_url)
     expect(result.filename).toBe("receipt-1.pdf")
     expect(result.contentType).toBe("application/pdf")
     expect(result.bytes.byteLength).toBe(8)
   })
 
-  it("throws an ApiError when the storage fetch fails", async () => {
-    mockFetch
-      .mockReturnValueOnce(mockResponse(mockReceipt))
-      .mockReturnValueOnce(mockResponse(mockDocument))
-      .mockReturnValueOnce(Promise.resolve({ ok: false, status: 502 } as Response))
+  it("falls back to a generated filename when Content-Disposition is missing", async () => {
+    mockFetch.mockReturnValueOnce(
+      mockFileResponse(true, { headers: [["content-type", "application/pdf"]] })
+    )
+
+    const result = await backendGetReceiptFile("token", "receipt-uuid-1")
+
+    expect(result.filename).toBe("receipt-receipt-uuid-1.pdf")
+  })
+
+  it("throws an ApiError with the parsed detail when the download endpoint rejects the request", async () => {
+    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Not authorized for this property" }, 403))
+    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Not authorized for this property" }, 403))
 
     await expect(backendGetReceiptFile("token", "receipt-uuid-1")).rejects.toBeInstanceOf(ApiError)
+    await expect(backendGetReceiptFile("token", "receipt-uuid-1")).rejects.toMatchObject({
+      status: 403,
+      detail: "Not authorized for this property",
+    })
+  })
+
+  it("throws an ApiError with a generic detail when the error body isn't JSON", async () => {
+    mockFetch.mockReturnValueOnce(mockFileResponse(false, { status: 500 }))
+    mockFetch.mockReturnValueOnce(mockFileResponse(false, { status: 500 }))
+
+    await expect(backendGetReceiptFile("token", "receipt-uuid-1")).rejects.toBeInstanceOf(ApiError)
+    await expect(backendGetReceiptFile("token", "receipt-uuid-1")).rejects.toMatchObject({
+      status: 500,
+    })
   })
 })

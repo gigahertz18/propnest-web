@@ -10,13 +10,15 @@
  * Receipt row and never mutates an existing one. There is deliberately no
  * update/delete function here to match that invariant.
  *
- * A ReceiptResponse only carries a `document_id`, not a file. The file bytes
- * live in MinIO, which per docs/architecture/system-overview.md is only
- * reachable from propnest-api — the browser (and this Next.js server) can't
- * reach it directly except via whatever `file_url` propnest-api hands back
- * on the linked Document. backendGetReceiptFile composes receipt → document
- * → file into one server-side fetch so the Route Handler can pass the bytes
- * straight through without ever exposing the storage URL to the client.
+ * The file bytes for a receipt live in MinIO, which per
+ * docs/architecture/system-overview.md is only reachable from propnest-api —
+ * this Next.js server (and the browser) can't reach it directly. Rather than
+ * resolving the linked Document's `file_url` and fetching it separately
+ * (which requires storage credentials this app doesn't have and returns 403
+ * against a private bucket), backendGetReceiptFile calls propnest-api's own
+ * authenticated GET /receipts/{id}/download endpoint, which streams the
+ * bytes through server-side. The Route Handler passes those bytes straight
+ * through without ever exposing a storage URL to the client.
  */
 
 import type { Receipt } from "@/types/receipt"
@@ -115,42 +117,49 @@ export async function backendIssueReceipt(token: string, paymentId: string): Pro
   })
 }
 
-interface DocumentFile {
-  file_name: string
-  file_type: string
-  file_url: string
-}
-
 export interface ReceiptFile {
   bytes: ArrayBuffer
   contentType: string
   filename: string
 }
 
+function parseFilenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null
+  const match = header.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 /**
- * Resolve a receipt's PDF bytes: receipt → linked document → storage file.
- * Throws ApiError if any leg of that chain fails, including the final
- * storage fetch (which isn't a propnest-api call, so it doesn't go through
- * backendFetch's JSON error-detail handling).
+ * Resolve a receipt's PDF bytes via propnest-api's own authenticated
+ * GET /receipts/{id}/download endpoint. This isn't a JSON endpoint on
+ * success, so it can't go through backendFetch (which always calls
+ * res.json() on success) — only its error-detail handling is mirrored here.
  */
 export async function backendGetReceiptFile(
   token: string,
   receiptId: string
 ): Promise<ReceiptFile> {
-  const receipt = await backendGetReceipt(token, receiptId)
-  const doc = await backendFetch<DocumentFile>(`/documents/${receipt.document_id}`, {
+  const res = await fetch(`${BACKEND_URL}${API_PREFIX}/receipts/${receiptId}/download`, {
     method: "GET",
-    token,
+    headers: { Authorization: `Bearer ${token}` },
   })
 
-  const fileRes = await fetch(doc.file_url)
-  if (!fileRes.ok) {
-    throw new ApiError(fileRes.status, "Failed to retrieve the receipt file from storage")
+  if (!res.ok) {
+    let detail = `Request failed with status ${res.status}`
+    try {
+      const body = await res.json()
+      detail = extractDetail(body, detail)
+    } catch {
+      /* non-JSON response */
+    }
+    throw new ApiError(res.status, detail)
   }
 
   return {
-    bytes: await fileRes.arrayBuffer(),
-    contentType: fileRes.headers.get("content-type") ?? doc.file_type ?? "application/pdf",
-    filename: doc.file_name || `receipt-${receipt.receipt_number}.pdf`,
+    bytes: await res.arrayBuffer(),
+    contentType: res.headers.get("content-type") ?? "application/pdf",
+    filename:
+      parseFilenameFromContentDisposition(res.headers.get("content-disposition")) ??
+      `receipt-${receiptId}.pdf`,
   }
 }

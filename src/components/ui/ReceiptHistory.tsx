@@ -39,6 +39,7 @@ export function ReceiptHistory({ payment, contractLabel, onError }: ReceiptHisto
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [issuing, setIssuing] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [view, setView] = useState<View>({ type: "list" })
 
   const load = useCallback(async () => {
@@ -58,6 +59,23 @@ export function ReceiptHistory({ payment, contractLabel, onError }: ReceiptHisto
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
+
+  async function handleDownload(receipt: Receipt) {
+    setDownloading(true)
+    try {
+      const { blob, filename } = await receiptsApi.download(receipt.id, receipt.receipt_number)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      onError(err instanceof ApiError ? err.detail : "Failed to download receipt")
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   async function handleIssue() {
     setIssuing(true)
@@ -106,11 +124,14 @@ export function ReceiptHistory({ payment, contractLabel, onError }: ReceiptHisto
           <p className="text-muted-foreground">Issued {formatDateTime(receipt.created_at)}</p>
         </div>
 
-        <a href={receiptsApi.downloadUrl(receipt.id)} download className="block">
-          <Button variant="outline" className="w-full">
-            Download PDF
-          </Button>
-        </a>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => handleDownload(receipt)}
+          disabled={downloading}
+        >
+          {downloading ? "Downloading…" : "Download PDF"}
+        </Button>
 
         <div className="space-y-2">
           <Button onClick={handleIssue} disabled={issuing} className="w-full">

@@ -2,16 +2,17 @@
  * Tests for the ReceiptHistory component.
  *
  * Covers: loading, empty state with first-issue action, listing existing
- * receipts newest-first, opening receipt detail, downloading via a plain
- * same-origin anchor (no fetch/blob dance — the httpOnly session cookie
- * rides along on normal navigation), reprinting without losing the
- * original record, and a failed initial fetch with retry.
+ * receipts newest-first, opening receipt detail, downloading via a
+ * fetch-based blob flow with visible error handling on failure, reprinting
+ * without losing the original record, and a failed initial fetch with
+ * retry.
  */
 
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 
 import { ReceiptHistory } from "@/components/ui/ReceiptHistory"
 import { receiptsApi } from "@/lib/api/receipts"
+import { ApiError } from "@/types"
 import type { Receipt } from "@/types/receipt"
 import type { Payment } from "@/types/payment"
 
@@ -19,6 +20,7 @@ jest.mock("@/lib/api/receipts", () => ({
   receiptsApi: {
     listForPayment: jest.fn(),
     issue: jest.fn(),
+    download: jest.fn(),
     downloadUrl: jest.fn((id: string) => `/api/receipts/${id}/download`),
   },
 }))
@@ -27,6 +29,7 @@ const mockListForPayment = receiptsApi.listForPayment as jest.MockedFunction<
   typeof receiptsApi.listForPayment
 >
 const mockIssue = receiptsApi.issue as jest.MockedFunction<typeof receiptsApi.issue>
+const mockDownload = receiptsApi.download as jest.MockedFunction<typeof receiptsApi.download>
 
 const mockPayment: Payment = {
   id: "payment-uuid-1",
@@ -109,7 +112,7 @@ describe("ReceiptHistory", () => {
     expect(await screen.findByText("Receipt #1")).toBeInTheDocument()
   })
 
-  it("opening a receipt shows its detail with a download link and a reprint action", async () => {
+  it("opening a receipt shows its detail with a download action and a reprint action", async () => {
     mockListForPayment.mockResolvedValue([receiptOne])
     render(
       <ReceiptHistory
@@ -121,11 +124,66 @@ describe("ReceiptHistory", () => {
 
     fireEvent.click(await screen.findByText("Receipt #1"))
 
-    expect(screen.getByRole("link", { name: /download pdf/i })).toHaveAttribute(
-      "href",
-      "/api/receipts/receipt-uuid-1/download"
-    )
+    expect(screen.getByRole("button", { name: /download pdf/i })).toBeEnabled()
     expect(screen.getByRole("button", { name: /reprint receipt/i })).toBeInTheDocument()
+  })
+
+  describe("downloading a receipt", () => {
+    let createObjectURLSpy: jest.SpyInstance
+    let revokeObjectURLSpy: jest.SpyInstance
+    let clickSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      createObjectURLSpy = jest.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-url")
+      revokeObjectURLSpy = jest.spyOn(URL, "revokeObjectURL").mockImplementation(() => {})
+      clickSpy = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      createObjectURLSpy.mockRestore()
+      revokeObjectURLSpy.mockRestore()
+      clickSpy.mockRestore()
+    })
+
+    it("fetches the file and triggers a blob download on success", async () => {
+      mockListForPayment.mockResolvedValue([receiptOne])
+      const blob = new Blob(["pdf-bytes"])
+      mockDownload.mockResolvedValue({ blob, filename: "receipt-1.pdf" })
+      render(
+        <ReceiptHistory
+          payment={mockPayment}
+          contractLabel="Sunset Villa — Jane Doe"
+          onError={jest.fn()}
+        />
+      )
+
+      fireEvent.click(await screen.findByText("Receipt #1"))
+      fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
+
+      await waitFor(() => expect(mockDownload).toHaveBeenCalledWith("receipt-uuid-1", 1))
+      await waitFor(() => expect(createObjectURLSpy).toHaveBeenCalledWith(blob))
+      expect(clickSpy).toHaveBeenCalled()
+      expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:mock-url")
+    })
+
+    it("shows a visible error via onError and does not trigger a download when the fetch fails", async () => {
+      mockListForPayment.mockResolvedValue([receiptOne])
+      mockDownload.mockRejectedValue(new ApiError(403, "Not authorized for this property"))
+      const onError = jest.fn()
+      render(
+        <ReceiptHistory
+          payment={mockPayment}
+          contractLabel="Sunset Villa — Jane Doe"
+          onError={onError}
+        />
+      )
+
+      fireEvent.click(await screen.findByText("Receipt #1"))
+      fireEvent.click(screen.getByRole("button", { name: /download pdf/i }))
+
+      await waitFor(() => expect(onError).toHaveBeenCalledWith("Not authorized for this property"))
+      expect(createObjectURLSpy).not.toHaveBeenCalled()
+    })
   })
 
   it("reprinting issues a new receipt without removing the original from history", async () => {
