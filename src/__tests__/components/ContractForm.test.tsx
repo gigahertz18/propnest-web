@@ -58,12 +58,15 @@ const mockContract: Contract = {
   updated_at: "2026-01-01T00:00:00Z",
 }
 
-// Types the tenant's name into the searchable combobox and picks the matching
+// Sets the tenant's name into the searchable combobox and picks the matching
 // result — mirrors how a user finds a tenant by name instead of pasting a UUID.
+// Uses paste rather than character-by-character typing since this test isn't
+// exercising incremental filter-as-you-type behavior (see the tests below that
+// do, which still type character-by-character).
 async function selectTenant(tenantName: string) {
   const input = screen.getByLabelText(/tenant/i)
   await userEvent.click(input)
-  await userEvent.type(input, tenantName)
+  await userEvent.paste(tenantName)
   const option = await screen.findByRole("option", { name: tenantName })
   await userEvent.click(option)
 }

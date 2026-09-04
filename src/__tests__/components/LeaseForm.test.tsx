@@ -81,11 +81,13 @@ const mockLease: Lease = {
   updated_at: "2026-01-01T00:00:00Z",
 }
 
-// Types into the searchable contract combobox and picks the matching result.
+// Sets the search value into the searchable contract combobox and picks the
+// matching result. Uses paste rather than character-by-character typing since
+// these tests aren't exercising incremental filter-as-you-type behavior.
 async function selectContract(label: string) {
   const input = screen.getByLabelText(/contract/i)
   await userEvent.click(input)
-  await userEvent.type(input, label)
+  await userEvent.paste(label)
   const option = await screen.findByRole("option", { name: label })
   await userEvent.click(option)
 }
