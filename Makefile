@@ -38,6 +38,13 @@ fe-shell:
 test-fe:
 	$(TEST_EXEC) frontend npx jest --passWithNoTests
 
+# CI already runs `npm ci` directly on the runner for lint/format; running
+# test-fe there too would rebuild the frontend Docker image (a second,
+# redundant `npm ci` inside the container) for no benefit, since CI doesn't
+# need Docker's local-dev environment parity. Runs jest directly instead.
+test-fe-ci:
+	npx jest --passWithNoTests
+
 test-fe-watch:
 	$(TEST_EXEC) frontend npx jest --watch
 
@@ -76,6 +83,6 @@ clean:
         logs-backend logs-db logs-minio logs-frontend \
         db-shell be-shell fe-shell seed \
         migrate-new migrate-up migrate-down migrate-history \
-        test-fe test-fe-watch test-fe-cov test-fe-file \
+        test-fe test-fe-ci test-fe-watch test-fe-cov test-fe-file \
         lint-fe lint-fe-fix format-fe format-fe-fix \
         test-all ps clean

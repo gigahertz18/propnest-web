@@ -6,28 +6,7 @@ WORKDIR /app
 FROM base AS dev
 
 COPY package.json package-lock.json* ./
-RUN npm ci && \
-    npm install \
-      clsx \
-      class-variance-authority \
-      tailwindcss-animate \
-      lucide-react && \
-    npm install --save-dev \
-      jest \
-      jest-environment-jsdom \
-      @testing-library/react \
-      @testing-library/jest-dom \
-      @testing-library/user-event \
-      @types/jest \
-      eslint \
-      eslint-config-next \
-      @next/eslint-plugin-next \
-      @typescript-eslint/parser \
-      @typescript-eslint/eslint-plugin \
-      eslint-plugin-react \
-      eslint-plugin-react-hooks \
-      prettier \
-      prettier-plugin-tailwindcss
+RUN npm ci
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -39,12 +18,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 FROM base AS builder
 
 COPY package.json package-lock.json* ./
-RUN npm ci && \
-    npm install \
-      clsx \
-      class-variance-authority \
-      tailwindcss-animate \
-      lucide-react
+RUN npm ci
 
 COPY . .
 

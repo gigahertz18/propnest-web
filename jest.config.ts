@@ -9,6 +9,7 @@ const config: Config = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
   testMatch: ["**/__tests__/**/*.test.(ts|tsx)"],
+  testTimeout: 10000,
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",

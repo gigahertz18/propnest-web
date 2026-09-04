@@ -264,7 +264,7 @@ describe("PropertyForm — edit mode", () => {
     await waitFor(() => {
       expect(mockListImages).toHaveBeenCalled()
     })
-    expect(screen.getByRole("button", { name: /save changes/i })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: /save changes/i })).toBeInTheDocument()
   })
 
   it("only sends changed fields in the patch payload", async () => {
@@ -276,7 +276,7 @@ describe("PropertyForm — edit mode", () => {
     })
     // Change only the name
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "New Name" } })
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
+    fireEvent.click(await screen.findByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({ name: "New Name" }, [])
     })
@@ -296,7 +296,7 @@ describe("PropertyForm — edit mode", () => {
     const inactiveOption = await screen.findByRole("option", { name: /inactive/i })
     await userEvent.click(inactiveOption)
 
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
+    fireEvent.click(await screen.findByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({ is_active: false }),
@@ -311,7 +311,7 @@ describe("PropertyForm — edit mode", () => {
     await waitFor(() => {
       expect(mockListImages).toHaveBeenCalled()
     })
-    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
+    fireEvent.click(await screen.findByRole("button", { name: /save changes/i }))
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({}, [])
     })

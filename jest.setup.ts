@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom"
 import { act } from "@testing-library/react"
+import { configure } from "@testing-library/dom"
+
+// Modest headroom over the default 1000ms for CI's slower shared runners.
+configure({ asyncUtilTimeout: 5000 })
 
 Object.defineProperty(URL, "createObjectURL", {
   writable: true,
@@ -28,6 +32,34 @@ if (typeof window !== "undefined") {
     observe() {}
     unobserve() {}
     disconnect() {}
+  }
+
+  // Works around a pathological slowdown in jsdom 20's selector engine
+  // (nwsapi): opening a Base UI Combobox/Select popup (a single userEvent
+  // click) was measured to call `element.matches(":fullscreen")` 68M+ times
+  // and `element.matches(":modal")` ~67K times — turning a ~50ms interaction
+  // into 20+ seconds (confirmed via `node --cpu-prof`; all other selectors
+  // matched were negligible in comparison). This traces to nwsapi's `isModal`/
+  // `isFullscreen` state checks (nwsapi.js), which Base UI's floating-ui-based
+  // popup positioning/dismiss logic ends up triggering on every render while
+  // the popup is open. jsdom never actually enters fullscreen or has native
+  // <dialog> modal state in tests, so short-circuiting these three
+  // pseudo-classes to `false` is behaviorally identical to what jsdom would
+  // eventually resolve, just without the blowup. This is a test-environment-
+  // only patch — it never touches app code, and matching for every other
+  // selector is untouched.
+  const origMatches = Element.prototype.matches
+  const origWebkitMatches = Element.prototype.webkitMatchesSelector
+  const alwaysFalseInJSDOM = new Set([":fullscreen", ":modal", ":picture-in-picture"])
+  Element.prototype.matches = function (selector: string) {
+    if (alwaysFalseInJSDOM.has(selector)) return false
+    return origMatches.call(this, selector)
+  }
+  if (origWebkitMatches) {
+    Element.prototype.webkitMatchesSelector = function (selector: string) {
+      if (alwaysFalseInJSDOM.has(selector)) return false
+      return origWebkitMatches.call(this, selector)
+    }
   }
 
   // Flush any pending microtasks (e.g. effects whose promise chains resolve

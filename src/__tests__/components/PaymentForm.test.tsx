@@ -130,20 +130,24 @@ function baseProps() {
   }
 }
 
-// Types into the searchable contract combobox and picks the matching result.
+// Sets the search value into the searchable contract combobox and picks the
+// matching result. Uses paste rather than character-by-character typing since
+// these tests aren't exercising incremental filter-as-you-type behavior.
 async function selectContract(label: string) {
   const input = screen.getByLabelText(/contract/i)
   await userEvent.click(input)
-  await userEvent.type(input, label)
+  await userEvent.paste(label)
   const option = await screen.findByRole("option", { name: label })
   await userEvent.click(option)
 }
 
-// Types into the searchable billing-record combobox and picks the matching result.
+// Sets the search value into the searchable billing-record combobox and picks
+// the matching result. See selectContract above for why paste is used instead
+// of typing character-by-character.
 async function selectBillingRecord(label: string) {
   const input = screen.getByLabelText(/billing record/i)
   await userEvent.click(input)
-  await userEvent.type(input, label)
+  await userEvent.paste(label)
   const option = await screen.findByRole("option", { name: label })
   await userEvent.click(option)
 }
@@ -214,7 +218,7 @@ describe("PaymentForm — create mode", () => {
         })
       )
     })
-  }, 15000)
+  })
 
   it("omits billing_record_id when left blank", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)

@@ -67,6 +67,17 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   return res.json() as Promise<T>
 }
 
+export interface DownloadedFile {
+  blob: Blob
+  filename: string
+}
+
+function parseFilenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null
+  const match = header.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 export const receiptsApi = {
   listForPayment: (paymentId: string): Promise<Receipt[]> =>
     apiFetch<Receipt[]>(`/api/payments/${paymentId}/receipts`),
@@ -76,11 +87,38 @@ export const receiptsApi = {
   issue: (paymentId: string): Promise<Receipt> =>
     apiFetch<Receipt>(`/api/payments/${paymentId}/receipts`, { method: "POST" }),
 
-  /**
-   * Not a fetch — the browser navigates here directly (an <a href> with
-   * `download`), which carries the httpOnly session cookie same-origin.
-   * The Route Handler behind this path authenticates the request and
-   * streams the PDF bytes through from storage; see receiptsBackend.ts.
-   */
   downloadUrl: (id: string): string => `/api/receipts/${id}/download`,
+
+  /**
+   * Fetches the receipt PDF as a Blob. Unlike the JSON endpoints above, a
+   * success body is raw PDF bytes while a failure body is JSON ({detail}),
+   * so this can't reuse apiFetch (which assumes JSON on success). Also
+   * guards against a 200 response whose body isn't actually a PDF (the
+   * exact failure mode that used to silently save a JSON error as a file).
+   */
+  download: async (id: string, receiptNumber?: number): Promise<DownloadedFile> => {
+    const res = await fetch(receiptsApi.downloadUrl(id))
+
+    if (!res.ok) {
+      let detail = `Request failed with status ${res.status}`
+      try {
+        const body = await res.json()
+        detail = extractDetail(body, detail)
+      } catch {
+        /* non-JSON response */
+      }
+      throw new ApiError(res.status, detail)
+    }
+
+    const contentType = res.headers.get("content-type") ?? ""
+    if (!contentType.includes("application/pdf")) {
+      throw new ApiError(res.status, "Received an unexpected file type from the server")
+    }
+
+    const filename =
+      parseFilenameFromContentDisposition(res.headers.get("content-disposition")) ??
+      `receipt-${receiptNumber ?? id}.pdf`
+
+    return { blob: await res.blob(), filename }
+  },
 }
