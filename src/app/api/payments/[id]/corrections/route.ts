@@ -14,7 +14,10 @@ function unauthorized() {
 
 function handleError(err: unknown) {
   if (err instanceof ApiError) {
-    return NextResponse.json({ detail: err.detail }, { status: err.status })
+    return NextResponse.json(
+      { detail: err.detail, fieldErrors: err.fieldErrors },
+      { status: err.status }
+    )
   }
   console.error("[api/payments/[id]/corrections] Unexpected error:", err)
   return NextResponse.json({ detail: "An unexpected error occurred" }, { status: 500 })

@@ -226,3 +226,32 @@ describe("paymentsApi detail extraction", () => {
     }
   })
 })
+
+// ─── field-error passthrough (Route Handler already flattens loc → fieldErrors) ─
+
+describe("paymentsApi field-error extraction", () => {
+  it("passes the response body's fieldErrors through onto the thrown ApiError", async () => {
+    mockFetch.mockReturnValue(
+      mockResponse(
+        { detail: "must be 13 digits", fieldErrors: { reference_number: "must be 13 digits" } },
+        422
+      )
+    )
+    try {
+      await paymentsApi.create({ ...createPayload, reference_number: "123" })
+      throw new Error("expected paymentsApi.create to reject")
+    } catch (err) {
+      expect((err as ApiError).fieldErrors).toEqual({ reference_number: "must be 13 digits" })
+    }
+  })
+
+  it("leaves fieldErrors undefined when the response body doesn't have any", async () => {
+    mockFetch.mockReturnValue(mockResponse({ detail: "Not authenticated" }, 401))
+    try {
+      await paymentsApi.list()
+      throw new Error("expected paymentsApi.list to reject")
+    } catch (err) {
+      expect((err as ApiError).fieldErrors).toBeUndefined()
+    }
+  })
+})

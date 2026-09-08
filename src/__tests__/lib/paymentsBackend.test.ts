@@ -169,6 +169,37 @@ describe("paymentsBackend detail extraction", () => {
   })
 })
 
+describe("paymentsBackend field-error extraction", () => {
+  it("maps a FastAPI validation error's loc to a field-keyed error on reference_number", async () => {
+    mockFetch.mockReturnValue(
+      mockResponse(
+        {
+          detail: [
+            { loc: ["body", "reference_number"], msg: "must be 13 digits", type: "value_error" },
+          ],
+        },
+        422
+      )
+    )
+    try {
+      await backendCreatePayment("token", createPayload)
+      throw new Error("expected backendCreatePayment to reject")
+    } catch (err) {
+      expect((err as ApiError).fieldErrors).toEqual({ reference_number: "must be 13 digits" })
+    }
+  })
+
+  it("leaves fieldErrors undefined when detail is a plain string", async () => {
+    mockFetch.mockReturnValue(mockResponse({ detail: "Contract not found" }, 404))
+    try {
+      await backendCreatePayment("token", createPayload)
+      throw new Error("expected backendCreatePayment to reject")
+    } catch (err) {
+      expect((err as ApiError).fieldErrors).toBeUndefined()
+    }
+  })
+})
+
 describe("paymentsBackend CRUD", () => {
   it("backendListPayments unwraps {items,total} into an array and injects the auth header", async () => {
     mockFetch.mockReturnValue(mockResponse({ items: [mockPayment], total: 1 }))
