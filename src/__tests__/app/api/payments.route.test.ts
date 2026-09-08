@@ -12,6 +12,7 @@
 
 import { NextRequest } from "next/server"
 import { ApiError } from "@/types"
+import type { Payment } from "@/types/payment"
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ const mockCorrect = backend.backendCorrectPayment as jest.MockedFunction<
 >
 const mockGetToken = session.getToken as jest.MockedFunction<typeof session.getToken>
 
-const mockPayment = {
+const mockPayment: Payment = {
   id: "payment-uuid-1",
   contract_id: "contract-uuid-1",
   billing_record_id: "billing-uuid-1",
@@ -159,6 +160,19 @@ describe("POST /api/payments", () => {
     mockCreate.mockRejectedValue(new ApiError(422, "amount must be greater than 0"))
     const res = await listPOST(makeRequest({ ...payload, amount: "0" }, "POST"))
     expect(res.status).toBe(422)
+  })
+
+  it("forwards fieldErrors alongside detail when the backend flags a specific field", async () => {
+    mockGetToken.mockResolvedValue("token")
+    mockCreate.mockRejectedValue(
+      new ApiError(422, "must be 13 digits", { reference_number: "must be 13 digits" })
+    )
+    const res = await listPOST(makeRequest({ ...payload, reference_number: "123" }, "POST"))
+    expect(res.status).toBe(422)
+    expect(await res.json()).toEqual({
+      detail: "must be 13 digits",
+      fieldErrors: { reference_number: "must be 13 digits" },
+    })
   })
 
   it("returns 500 on unexpected error", async () => {

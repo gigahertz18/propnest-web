@@ -11,6 +11,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 
 import { PaymentForm } from "@/components/ui/PaymentForm"
+import { ApiError } from "@/types"
 import type { Payment } from "@/types/payment"
 import type { Contract } from "@/types/contract"
 import type { Property } from "@/types/property"
@@ -130,6 +131,12 @@ function baseProps() {
   }
 }
 
+// Opens the payment-method select and picks the option with the given label.
+async function selectPaymentMethod(label: string) {
+  await userEvent.click(screen.getByLabelText(/method/i))
+  await userEvent.click(await screen.findByRole("option", { name: label }))
+}
+
 // Sets the search value into the searchable contract combobox and picks the
 // matching result. Uses paste rather than character-by-character typing since
 // these tests aren't exercising incremental filter-as-you-type behavior.
@@ -191,6 +198,15 @@ describe("PaymentForm — create mode", () => {
     expect(screen.getByRole("button", { name: /record payment/i })).toBeDisabled()
   })
 
+  it("keeps reference number fully optional when payment method is left unspecified", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).not.toBeDisabled()
+    })
+  })
+
   it("submit button enables once contract and amount are filled", async () => {
     render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
     await selectContract("Sunset Villa — Jane Doe")
@@ -238,7 +254,10 @@ describe("PaymentForm — create mode", () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it("calls onError with the message when onSubmit throws, instead of rendering it inline", async () => {
+  // Field-specific reference_number 422s are handled separately (see the
+  // "renders a reference_number-specific 422 inline" test below) — this
+  // covers the generic/non-field error path, which is unchanged by issue #18.
+  it("calls onError with the message for a generic onSubmit failure, without rendering it inline", async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error("amount must be greater than 0"))
     const onError = jest.fn()
     render(
@@ -251,6 +270,129 @@ describe("PaymentForm — create mode", () => {
       expect(onError).toHaveBeenCalledWith("amount must be greater than 0")
     })
     expect(screen.queryByText("amount must be greater than 0")).not.toBeInTheDocument()
+  })
+
+  it("disables reference number and shows an auto-generated hint when method is cash", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectPaymentMethod("Cash")
+    expect(screen.getByLabelText(/reference number/i)).toBeDisabled()
+    expect(screen.getByText(/auto-generated/i)).toBeInTheDocument()
+  })
+
+  it("submits reference_number as null for cash, even if a value was typed before switching to cash", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(<PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    fireEvent.change(screen.getByLabelText(/reference number/i), { target: { value: "ABC123" } })
+    await selectPaymentMethod("Cash")
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ reference_number: null }))
+    })
+  })
+
+  it("requires check reference numbers to be 4-10 digits", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    await selectPaymentMethod("Check")
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), { target: { value: "12" } })
+    fireEvent.blur(screen.getByLabelText(/reference number/i))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/4–10 digits/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), {
+      target: { value: "1234567890" },
+    })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).not.toBeDisabled()
+    })
+  })
+
+  it("requires gcash reference numbers to be exactly 13 digits", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    await selectPaymentMethod("GCash")
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), {
+      target: { value: "123456789012" },
+    })
+    fireEvent.blur(screen.getByLabelText(/reference number/i))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/13 digits/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), {
+      target: { value: "1234567890123" },
+    })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).not.toBeDisabled()
+    })
+  })
+
+  it("requires bank transfer / maya reference numbers to be 6-34 alphanumeric+dash characters", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    await selectPaymentMethod("Bank transfer")
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), { target: { value: "ab" } })
+    fireEvent.blur(screen.getByLabelText(/reference number/i))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/letters, numbers, or dashes/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/reference number/i), {
+      target: { value: "ABC-123456" },
+    })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /record payment/i })).not.toBeDisabled()
+    })
+  })
+
+  it("renders a reference_number-specific 422 inline instead of calling onError", async () => {
+    const onSubmit = jest
+      .fn()
+      .mockRejectedValue(
+        new ApiError(422, "must be 13 digits", { reference_number: "must be 13 digits" })
+      )
+    const onError = jest.fn()
+    render(
+      <PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} onError={onError} />
+    )
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(screen.getByText("must be 13 digits")).toBeInTheDocument()
+    })
+    expect(onError).not.toHaveBeenCalled()
+  })
+
+  it("clears a server-side reference_number error once the user edits the field", async () => {
+    const onSubmit = jest
+      .fn()
+      .mockRejectedValue(
+        new ApiError(422, "must be 13 digits", { reference_number: "must be 13 digits" })
+      )
+    render(
+      <PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} onError={jest.fn()} />
+    )
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(screen.getByText("must be 13 digits")).toBeInTheDocument()
+    })
+    fireEvent.change(screen.getByLabelText(/reference number/i), { target: { value: "x" } })
+    expect(screen.queryByText("must be 13 digits")).not.toBeInTheDocument()
   })
 
   it("re-enables the form after onSubmit throws, so the user can retry", async () => {
@@ -293,6 +435,55 @@ describe("PaymentForm — edit mode", () => {
       />
     )
     expect(screen.getByText(/^status$/i)).toBeInTheDocument()
+  })
+
+  it("nulls out reference_number when the method is changed to cash", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(
+      <PaymentForm
+        {...baseProps()}
+        payment={mockPayment}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+      />
+    )
+    await selectPaymentMethod("Cash")
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ payment_method: "cash", reference_number: null })
+      )
+    })
+  })
+
+  it("blocks submit when the user edits an existing reference number into an invalid format", async () => {
+    render(
+      <PaymentForm
+        {...baseProps()}
+        payment={mockPayment}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText(/reference number/i), { target: { value: "123" } })
+    fireEvent.blur(screen.getByLabelText(/reference number/i))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /save changes/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/13 digits/i)).toBeInTheDocument()
+  })
+
+  it("shows no validation error on initial render for a pre-filled, already-compliant reference number", () => {
+    render(
+      <PaymentForm
+        {...baseProps()}
+        payment={{ ...mockPayment, reference_number: "1234567890123" }}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    )
+    expect(screen.queryByText(/must be/i)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /save changes/i })).not.toBeDisabled()
   })
 
   it("submits only the changed fields", async () => {

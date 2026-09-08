@@ -55,13 +55,15 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   if (!res.ok) {
     let detail = `Request failed with status ${res.status}`
+    let fieldErrors: Record<string, string> | undefined
     try {
       const body = await res.json()
       detail = extractDetail(body, detail)
+      fieldErrors = (body as { fieldErrors?: Record<string, string> } | null)?.fieldErrors
     } catch {
       /* non-JSON response */
     }
-    throw new ApiError(res.status, detail)
+    throw new ApiError(res.status, detail, fieldErrors)
   }
 
   if (res.status === 204) return undefined as T

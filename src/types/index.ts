@@ -61,7 +61,8 @@ export interface ApiErrorBody {
 export class ApiError extends Error {
   constructor(
     public status: number,
-    public detail: string
+    public detail: string,
+    public fieldErrors?: Record<string, string>
   ) {
     super(detail)
     this.name = "ApiError"
