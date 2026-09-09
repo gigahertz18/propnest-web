@@ -31,6 +31,17 @@ const mockProperties: Property[] = [
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
+  {
+    id: "prop-uuid-2",
+    name: "Ocean Breeze",
+    address: "456 Shore Rd, Batangas",
+    description: null,
+    status: "occupied",
+    is_active: true,
+    manager_id: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  },
 ]
 
 const mockTenants: Tenant[] = [
@@ -41,6 +52,20 @@ const mockTenants: Tenant[] = [
     phone_number: "+63 900 000 0000",
     date_of_birth: "1995-01-01",
     current_address: "123 Main St, Manila",
+    occupation: null,
+    notes: null,
+    is_active: true,
+    user_id: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "tenant-uuid-2",
+    full_name: "John Smith",
+    email: "john@example.com",
+    phone_number: "+63 900 000 0001",
+    date_of_birth: "1990-01-01",
+    current_address: "456 Shore Rd, Batangas",
     occupation: null,
     notes: null,
     is_active: true,
@@ -65,6 +90,20 @@ const mockContracts: Contract[] = [
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
+  {
+    id: "contract-uuid-2",
+    property_id: "prop-uuid-2",
+    tenant_id: "tenant-uuid-2",
+    rental_type: "long_term",
+    start_date: "2026-01-01",
+    end_date: null,
+    rent_amount: "18000.00",
+    deposit: "36000.00",
+    booking_source: "direct",
+    status: "ACTIVE",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  },
 ]
 
 const mockLeases: Lease[] = [
@@ -72,6 +111,24 @@ const mockLeases: Lease[] = [
     id: "lease-uuid-1",
     contract_id: "contract-uuid-1",
     monthly_rent: "15000.00",
+    due_day: 5,
+    billing_cycle: "monthly",
+    security_deposit: null,
+    advance_payment: null,
+    late_fee_amount: null,
+    late_fee_percent: null,
+    grace_period_days: 0,
+    renewal_option: "none",
+    status: "ACTIVE",
+    start_date: "2026-01-01",
+    end_date: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  },
+  {
+    id: "lease-uuid-2",
+    contract_id: "contract-uuid-2",
+    monthly_rent: "18000.00",
     due_day: 5,
     billing_cycle: "monthly",
     security_deposit: null,
@@ -103,9 +160,24 @@ const mockBillingRecords: BillingRecord[] = [
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
+  {
+    id: "billing-uuid-2",
+    lease_id: "lease-uuid-2",
+    period_start: "2026-02-01",
+    period_end: "2026-02-28",
+    due_date: "2026-02-05",
+    amount_due: "18000.00",
+    late_fee_applied: false,
+    late_fee_amount_charged: null,
+    status: "pending",
+    overpaid_amount: null,
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+  },
 ]
 
 const BILLING_RECORD_LABEL = "Sunset Villa — Jane Doe · Jan 1, 2026 – Jan 31, 2026 · pending"
+const BILLING_RECORD_LABEL_2 = "Ocean Breeze — John Smith · Feb 1, 2026 – Feb 28, 2026 · pending"
 
 const mockPayment: Payment = {
   id: "payment-uuid-1",
@@ -143,6 +215,7 @@ async function selectPaymentMethod(label: string) {
 async function selectContract(label: string) {
   const input = screen.getByLabelText(/contract/i)
   await userEvent.click(input)
+  await userEvent.clear(input)
   await userEvent.paste(label)
   const option = await screen.findByRole("option", { name: label })
   await userEvent.click(option)
@@ -187,10 +260,38 @@ describe("PaymentForm — create mode", () => {
 
   it("shows known billing records labeled by lease, period, and status, not their raw id", async () => {
     render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
     const input = screen.getByLabelText(/billing record/i)
     await userEvent.click(input)
     expect(await screen.findByRole("option", { name: BILLING_RECORD_LABEL })).toBeInTheDocument()
     expect(screen.queryByText("billing-uuid-1")).not.toBeInTheDocument()
+  })
+
+  it("only offers billing records belonging to the selected contract's leases", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    const input = screen.getByLabelText(/billing record/i)
+    await userEvent.click(input)
+    expect(await screen.findByRole("option", { name: BILLING_RECORD_LABEL })).toBeInTheDocument()
+    expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL_2 })).not.toBeInTheDocument()
+  })
+
+  it("scopes billing records to whichever contract is selected, not a hardcoded one", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    await selectContract("Ocean Breeze — John Smith")
+    const input = screen.getByLabelText(/billing record/i)
+    await userEvent.click(input)
+    expect(await screen.findByRole("option", { name: BILLING_RECORD_LABEL_2 })).toBeInTheDocument()
+    expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL })).not.toBeInTheDocument()
+  })
+
+  it("offers no billing records before any contract is selected", async () => {
+    render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    const input = screen.getByLabelText(/billing record/i)
+    await userEvent.click(input)
+    expect(await screen.findByText(/no billing records checked yet/i)).toBeInTheDocument()
+    expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL })).not.toBeInTheDocument()
+    expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL_2 })).not.toBeInTheDocument()
   })
 
   it("submit button is disabled when required fields are empty", () => {
@@ -248,6 +349,39 @@ describe("PaymentForm — create mode", () => {
         expect.objectContaining({
           paid_at: expect.stringMatching(/^2026-02-10T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/),
         })
+      )
+    })
+  })
+
+  it("clears a previously-selected billing record if it no longer belongs to the newly selected contract", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(<PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    await selectBillingRecord(BILLING_RECORD_LABEL)
+    await selectContract("Ocean Breeze — John Smith")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "18000" } })
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ billing_record_id: null }))
+    })
+  })
+
+  it("keeps a previously-selected billing record when the contract selection resolves to the same contract", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(<PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    await selectBillingRecord(BILLING_RECORD_LABEL)
+    // Reopen the (already-filled) contract combobox and re-pick the same option,
+    // without clearing the input first — unlike selectContract's clear+retype
+    // flow, this doesn't transiently deselect the contract along the way.
+    const contractInput = screen.getByLabelText(/contract/i)
+    await userEvent.click(contractInput)
+    await userEvent.click(await screen.findByRole("option", { name: "Sunset Villa — Jane Doe" }))
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ billing_record_id: "billing-uuid-1" })
       )
     })
   })

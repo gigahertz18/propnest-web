@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type {
   Payment,
   PaymentCreatePayload,
@@ -209,7 +209,20 @@ export function PaymentForm({
       isReferenceNumberValid(referenceNumberFormat, referenceNumber))
 
   const selectedContract = contracts.find((c) => c.id === contractId) ?? null
-  const selectedBillingRecord = billingRecords.find((r) => r.id === billingRecordId) ?? null
+
+  // A billing record only belongs to the selected contract if its lease does —
+  // BillingRecord has no contract_id of its own, so this has to join through
+  // Lease.contract_id (see leaseLabel/billingRecordLabel above).
+  const contractLeaseIds = useMemo(
+    () => new Set(leases.filter((l) => l.contract_id === contractId).map((l) => l.id)),
+    [leases, contractId]
+  )
+  const scopedBillingRecords = useMemo(
+    () => billingRecords.filter((r) => contractLeaseIds.has(r.lease_id)),
+    [billingRecords, contractLeaseIds]
+  )
+
+  const selectedBillingRecord = scopedBillingRecords.find((r) => r.id === billingRecordId) ?? null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -261,7 +274,19 @@ export function PaymentForm({
           <Combobox
             items={contracts}
             value={selectedContract}
-            onValueChange={(contract: Contract | null) => setContractId(contract?.id ?? "")}
+            onValueChange={(contract: Contract | null) => {
+              const newContractId = contract?.id ?? ""
+              setContractId(newContractId)
+              if (billingRecordId) {
+                const currentRecord = billingRecords.find((r) => r.id === billingRecordId)
+                const stillValid =
+                  !!currentRecord &&
+                  leases.some(
+                    (l) => l.id === currentRecord.lease_id && l.contract_id === newContractId
+                  )
+                if (!stillValid) setBillingRecordId("")
+              }
+            }}
             itemToStringLabel={(contract: Contract) => contractLabel(contract, properties, tenants)}
             disabled={loading}
           >
@@ -317,7 +342,7 @@ export function PaymentForm({
         <div className="space-y-1.5">
           <Label htmlFor="payment_billing_record_id">Billing record</Label>
           <Combobox
-            items={billingRecords}
+            items={scopedBillingRecords}
             value={selectedBillingRecord}
             onValueChange={(record: BillingRecord | null) => setBillingRecordId(record?.id ?? "")}
             itemToStringLabel={(record: BillingRecord) =>
