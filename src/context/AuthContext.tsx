@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import type { CurrentUser, LoginPayload } from "@/types"
 import { ApiError } from "@/types"
@@ -19,19 +19,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<CurrentUser | null>(null)
-  const [loading, setLoading] = useState(true)
+export function AuthProvider({
+  children,
+  initialUser,
+}: {
+  children: ReactNode
+  initialUser: CurrentUser | null
+}) {
+  // The root layout already resolves the current user server-side (from the
+  // httpOnly cookie) on every full navigation, so there's no need for a
+  // client-side rehydration fetch on mount — that would just duplicate the
+  // same /auth/me call the server already made for this request.
+  const [user, setUser] = useState<CurrentUser | null>(initialUser)
+  // Always resolved by the time this renders — kept in the context shape
+  // since consumers gate effects on it (e.g. admin pages waiting for auth
+  // state before fetching their own data).
+  const loading = false
   const router = useRouter()
-
-  // Rehydrate session state on mount by reading the cookie via server route
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
-  }, [])
 
   const login = useCallback(
     async (payload: LoginPayload) => {
@@ -48,8 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(data as CurrentUser)
+      // /dashboard hasn't been rendered yet this session, so push alone
+      // triggers a fresh server render (which will see the new auth
+      // cookie) — no need for a follow-up refresh() of the same route.
       router.push("/dashboard")
-      router.refresh()
     },
     [router]
   )

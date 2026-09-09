@@ -1,10 +1,11 @@
 /**
- * Tests for AuthContext — login, logout, role helpers, session rehydration.
+ * Tests for AuthContext — login, logout, role helpers, initial user hydration.
  */
 
-import { act, waitFor } from "@testing-library/react"
+import { act } from "@testing-library/react"
 import { renderHook } from "@testing-library/react"
 import { AuthProvider, useAuth } from "@/context/AuthContext"
+import type { CurrentUser } from "@/types"
 import { ApiError } from "@/types"
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -38,8 +39,10 @@ const mockUser = {
   updated_at: "2026-01-01T00:00:00Z",
 }
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  return <AuthProvider>{children}</AuthProvider>
+function makeWrapper(initialUser: CurrentUser | null = null) {
+  return function wrapper({ children }: { children: React.ReactNode }) {
+    return <AuthProvider initialUser={initialUser}>{children}</AuthProvider>
+  }
 }
 
 beforeEach(() => {
@@ -48,60 +51,36 @@ beforeEach(() => {
   mockRefresh.mockReset()
 })
 
-// ─── Session rehydration ──────────────────────────────────────────────────────
+// ─── Initial hydration from the server-provided user ──────────────────────────
 
-describe("AuthContext — session rehydration", () => {
-  it("starts in loading state", async () => {
-    mockFetch.mockReturnValue(mockResponse(null, 401))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    expect(result.current.loading).toBe(true)
-
-    await waitFor(() => {
-      expect(result.current.loading).toBe(false)
-    })
+describe("AuthContext — initial user hydration", () => {
+  it("is not in a loading state, since the user is already known from the server", () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
+    expect(result.current.loading).toBe(false)
   })
 
-  it("sets user when /api/auth/me returns 200", async () => {
-    mockFetch.mockReturnValue(mockResponse(mockUser))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+  it("uses the initialUser prop as the starting user", () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
     expect(result.current.user).toEqual(mockUser)
   })
 
-  it("sets user to null when /api/auth/me returns 401", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Not authenticated" }, 401))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+  it("starts with a null user when no initialUser is provided", () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
     expect(result.current.user).toBeNull()
   })
 
-  it("sets user to null when fetch throws", async () => {
-    mockFetch.mockRejectedValue(new Error("Network error"))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.user).toBeNull()
-  })
-
-  it("sets loading to false after rehydration completes", async () => {
-    mockFetch.mockReturnValue(mockResponse(mockUser))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+  it("does not fetch /api/auth/me on mount", () => {
+    renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
+    expect(mockFetch).not.toHaveBeenCalledWith("/api/auth/me")
   })
 })
 
 // ─── login ────────────────────────────────────────────────────────────────────
 
 describe("AuthContext — login", () => {
-  beforeEach(() => {
-    // First call is rehydration (/api/auth/me) — return 401
-    // Second call is login (/api/auth/login)
-    mockFetch.mockReturnValueOnce(mockResponse({ detail: "Not authenticated" }, 401))
-  })
-
   it("calls POST /api/auth/login with credentials", async () => {
     mockFetch.mockReturnValueOnce(mockResponse(mockUser))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     await act(async () => {
       await result.current.login({ identifier: "admin", password: "pass" })
@@ -115,8 +94,7 @@ describe("AuthContext — login", () => {
 
   it("sets user after successful login", async () => {
     mockFetch.mockReturnValueOnce(mockResponse(mockUser))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     await act(async () => {
       await result.current.login({ identifier: "admin", password: "pass" })
@@ -125,22 +103,21 @@ describe("AuthContext — login", () => {
     expect(result.current.user).toEqual(mockUser)
   })
 
-  it("redirects to /dashboard after login", async () => {
+  it("redirects to /dashboard after login without a follow-up refresh", async () => {
     mockFetch.mockReturnValueOnce(mockResponse(mockUser))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     await act(async () => {
       await result.current.login({ identifier: "admin", password: "pass" })
     })
 
     expect(mockPush).toHaveBeenCalledWith("/dashboard")
+    expect(mockRefresh).not.toHaveBeenCalled()
   })
 
   it("throws ApiError on failed login", async () => {
     mockFetch.mockReturnValueOnce(mockResponse({ detail: "Invalid credentials" }, 401))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     await expect(
       act(async () => {
@@ -151,8 +128,7 @@ describe("AuthContext — login", () => {
 
   it("does not set user on failed login", async () => {
     mockFetch.mockReturnValueOnce(mockResponse({ detail: "Invalid credentials" }, 401))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     try {
       await act(async () => {
@@ -170,12 +146,10 @@ describe("AuthContext — login", () => {
 
 describe("AuthContext — logout", () => {
   it("clears user on logout", async () => {
-    mockFetch
-      .mockReturnValueOnce(mockResponse(mockUser)) // rehydrate
-      .mockReturnValueOnce(mockResponse({ ok: true })) // logout
+    mockFetch.mockReturnValueOnce(mockResponse({ ok: true }))
 
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.user).toEqual(mockUser))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
+    expect(result.current.user).toEqual(mockUser)
 
     await act(async () => {
       await result.current.logout()
@@ -185,12 +159,9 @@ describe("AuthContext — logout", () => {
   })
 
   it("redirects to /login after logout", async () => {
-    mockFetch
-      .mockReturnValueOnce(mockResponse(mockUser))
-      .mockReturnValueOnce(mockResponse({ ok: true }))
+    mockFetch.mockReturnValueOnce(mockResponse({ ok: true }))
 
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.user).toEqual(mockUser))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
 
     await act(async () => {
       await result.current.logout()
@@ -200,12 +171,9 @@ describe("AuthContext — logout", () => {
   })
 
   it("calls POST /api/auth/logout", async () => {
-    mockFetch
-      .mockReturnValueOnce(mockResponse(mockUser))
-      .mockReturnValueOnce(mockResponse({ ok: true }))
+    mockFetch.mockReturnValueOnce(mockResponse({ ok: true }))
 
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.user).toEqual(mockUser))
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(mockUser) })
 
     await act(async () => {
       await result.current.logout()
@@ -221,57 +189,55 @@ describe("AuthContext — logout", () => {
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
 describe("AuthContext — role helpers", () => {
-  async function setupWithRole(role: "admin" | "manager" | "user") {
-    mockFetch.mockReturnValue(mockResponse({ ...mockUser, role }))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+  function setupWithRole(role: "admin" | "manager" | "user") {
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: makeWrapper({ ...mockUser, role }),
+    })
     return result
   }
 
-  it("isAdmin is true for admin role", async () => {
-    const result = await setupWithRole("admin")
+  it("isAdmin is true for admin role", () => {
+    const result = setupWithRole("admin")
     expect(result.current.isAdmin).toBe(true)
   })
 
-  it("isAdmin is false for manager role", async () => {
-    const result = await setupWithRole("manager")
+  it("isAdmin is false for manager role", () => {
+    const result = setupWithRole("manager")
     expect(result.current.isAdmin).toBe(false)
   })
 
-  it("isManager is true for manager role", async () => {
-    const result = await setupWithRole("manager")
+  it("isManager is true for manager role", () => {
+    const result = setupWithRole("manager")
     expect(result.current.isManager).toBe(true)
   })
 
-  it("isManager is false for admin role", async () => {
-    const result = await setupWithRole("admin")
+  it("isManager is false for admin role", () => {
+    const result = setupWithRole("admin")
     expect(result.current.isManager).toBe(false)
   })
 
-  it("isAtLeastManager is true for admin", async () => {
-    const result = await setupWithRole("admin")
+  it("isAtLeastManager is true for admin", () => {
+    const result = setupWithRole("admin")
     expect(result.current.isAtLeastManager).toBe(true)
   })
 
-  it("isAtLeastManager is true for manager", async () => {
-    const result = await setupWithRole("manager")
+  it("isAtLeastManager is true for manager", () => {
+    const result = setupWithRole("manager")
     expect(result.current.isAtLeastManager).toBe(true)
   })
 
-  it("isAtLeastManager is false for user", async () => {
-    const result = await setupWithRole("user")
+  it("isAtLeastManager is false for user", () => {
+    const result = setupWithRole("user")
     expect(result.current.isAtLeastManager).toBe(false)
   })
 
-  it("isRegularUser is true for user role", async () => {
-    const result = await setupWithRole("user")
+  it("isRegularUser is true for user role", () => {
+    const result = setupWithRole("user")
     expect(result.current.isRegularUser).toBe(true)
   })
 
-  it("all role helpers are false when no user is logged in", async () => {
-    mockFetch.mockReturnValue(mockResponse(null, 401))
-    const { result } = renderHook(() => useAuth(), { wrapper })
-    await waitFor(() => expect(result.current.loading).toBe(false))
+  it("all role helpers are false when no user is logged in", () => {
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper(null) })
 
     expect(result.current.isAdmin).toBe(false)
     expect(result.current.isManager).toBe(false)
