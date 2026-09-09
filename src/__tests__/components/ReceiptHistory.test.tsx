@@ -128,6 +128,26 @@ describe("ReceiptHistory", () => {
     expect(screen.getByRole("button", { name: /reprint receipt/i })).toBeInTheDocument()
   })
 
+  it("shows the paid date without a fabricated time-of-day, while the issued line keeps its full timestamp", async () => {
+    mockListForPayment.mockResolvedValue([receiptOne])
+    render(
+      <ReceiptHistory
+        payment={mockPayment}
+        contractLabel="Sunset Villa — Jane Doe"
+        onError={jest.fn()}
+      />
+    )
+
+    fireEvent.click(await screen.findByText("Receipt #1"))
+
+    const paidOn = await screen.findByText(/^Paid on/)
+    expect(paidOn).toHaveTextContent("Paid on Jan 5, 2026")
+    expect(paidOn.textContent).not.toMatch(/\d{1,2}:\d{2}\s*(AM|PM)/i)
+
+    const issued = screen.getByText(/^Issued/)
+    expect(issued.textContent).toMatch(/\d{1,2}:\d{2}\s*(AM|PM)/i)
+  })
+
   describe("downloading a receipt", () => {
     let createObjectURLSpy: jest.SpyInstance
     let revokeObjectURLSpy: jest.SpyInstance
