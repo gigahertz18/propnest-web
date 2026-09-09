@@ -397,6 +397,20 @@ describe("PaymentForm — create mode", () => {
     })
   })
 
+  it("notifies the parent via onContractChange when a contract is selected", async () => {
+    const onContractChange = jest.fn()
+    render(
+      <PaymentForm
+        {...baseProps()}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+        onContractChange={onContractChange}
+      />
+    )
+    await selectContract("Sunset Villa — Jane Doe")
+    expect(onContractChange).toHaveBeenCalledWith("contract-uuid-1")
+  })
+
   it("calls onCancel when Cancel is clicked", () => {
     const onCancel = jest.fn()
     render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={onCancel} />)

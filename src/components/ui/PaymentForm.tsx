@@ -165,6 +165,7 @@ interface PaymentFormProps {
   onSubmit: (payload: PaymentCreatePayload | PaymentUpdatePayload) => Promise<void>
   onCancel: () => void
   onError?: (message: string) => void
+  onContractChange?: (contractId: string) => void
 }
 
 export function PaymentForm({
@@ -177,6 +178,7 @@ export function PaymentForm({
   onSubmit,
   onCancel,
   onError,
+  onContractChange,
 }: PaymentFormProps) {
   const isEdit = !!payment
 
@@ -277,6 +279,7 @@ export function PaymentForm({
             onValueChange={(contract: Contract | null) => {
               const newContractId = contract?.id ?? ""
               setContractId(newContractId)
+              onContractChange?.(newContractId)
               if (billingRecordId) {
                 const currentRecord = billingRecords.find((r) => r.id === billingRecordId)
                 const stillValid =
