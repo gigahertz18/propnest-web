@@ -73,7 +73,7 @@ Done:
 
 ## Receipt UI
 
-Planned:
+Done:
 
 - receipt history
 - receipt detail
@@ -82,7 +82,7 @@ Planned:
 
 ## Dashboard UI
 
-Planned metrics:
+Done:
 
 - Collected This Month
 - Outstanding
