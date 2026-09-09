@@ -110,6 +110,18 @@ describe("backendGetDashboardSummary", () => {
       detail: "Not authenticated",
     })
   })
+
+  it("resolves without error on 204 instead of throwing on an empty JSON body", async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        status: 204,
+        json: () => Promise.reject(new Error("No body")),
+      } as Response)
+    )
+
+    await expect(backendGetDashboardSummary("token")).resolves.toBeUndefined()
+  })
 })
 
 describe("backendGetDashboardSummary detail extraction", () => {

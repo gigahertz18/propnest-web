@@ -7,6 +7,7 @@
 
 import type { Property, PropertyCreatePayload, PropertyUpdatePayload } from "@/types/property"
 import { ApiError } from "@/types"
+import { extractDetail } from "@/lib/api/utility"
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(path, {
@@ -18,7 +19,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     let detail = `Request failed with status ${res.status}`
     try {
       const body = await res.json()
-      detail = body.detail ?? detail
+      detail = extractDetail(body, detail)
     } catch {
       /* non-JSON response */
     }
@@ -66,7 +67,7 @@ export const propertiesApi = {
       let detail = `Upload failed with status ${res.status}`
       try {
         const body = await res.json()
-        detail = body.detail ?? detail
+        detail = extractDetail(body, detail)
       } catch {
         /* non-JSON */
       }
