@@ -289,9 +289,7 @@ describe("PaymentForm — create mode", () => {
     render(<PaymentForm {...baseProps()} onSubmit={jest.fn()} onCancel={jest.fn()} />)
     const input = screen.getByLabelText(/billing record/i)
     await userEvent.click(input)
-    expect(
-      await screen.findByText(/no billing records checked yet/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/no billing records checked yet/i)).toBeInTheDocument()
     expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL })).not.toBeInTheDocument()
     expect(screen.queryByRole("option", { name: BILLING_RECORD_LABEL_2 })).not.toBeInTheDocument()
   })
@@ -378,9 +376,7 @@ describe("PaymentForm — create mode", () => {
     // flow, this doesn't transiently deselect the contract along the way.
     const contractInput = screen.getByLabelText(/contract/i)
     await userEvent.click(contractInput)
-    await userEvent.click(
-      await screen.findByRole("option", { name: "Sunset Villa — Jane Doe" })
-    )
+    await userEvent.click(await screen.findByRole("option", { name: "Sunset Villa — Jane Doe" }))
     fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
     fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
     await waitFor(() => {
