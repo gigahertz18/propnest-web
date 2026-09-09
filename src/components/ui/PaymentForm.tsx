@@ -218,7 +218,10 @@ export function PaymentForm({
       if (isEdit) {
         const payload: PaymentUpdatePayload = {}
         if (amount !== payment.amount) payload.amount = amount
-        if (paidAt !== payment.paid_at.slice(0, 10)) payload.paid_at = paidAt
+        // paid_at requires a full ISO date-time; the native date input only ever
+        // gives us a date, so anchor it to an explicit, arbitrary midnight UTC
+        // rather than fabricating a real time of day the user never specified.
+        if (paidAt !== payment.paid_at.slice(0, 10)) payload.paid_at = `${paidAt}T00:00:00.000Z`
         if (paymentMethod !== (payment.payment_method ?? ""))
           payload.payment_method = (paymentMethod as PaymentMethod) || null
         if (status !== payment.status) payload.status = status
@@ -233,7 +236,7 @@ export function PaymentForm({
           contract_id: contractId,
           billing_record_id: billingRecordId || null,
           amount,
-          paid_at: paidAt || undefined,
+          paid_at: paidAt ? `${paidAt}T00:00:00.000Z` : undefined,
           payment_method: (paymentMethod as PaymentMethod) || null,
           reference_number: referenceNumberFormat?.disabled ? null : referenceNumber || null,
         }

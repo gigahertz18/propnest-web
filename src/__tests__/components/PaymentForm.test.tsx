@@ -236,6 +236,22 @@ describe("PaymentForm — create mode", () => {
     })
   })
 
+  it("converts the Paid on date to a full ISO datetime in the payload", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(<PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} />)
+    await selectContract("Sunset Villa — Jane Doe")
+    fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: "15000" } })
+    fireEvent.change(screen.getByLabelText(/paid on/i), { target: { value: "2026-02-10" } })
+    fireEvent.click(screen.getByRole("button", { name: /record payment/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          paid_at: expect.stringMatching(/^2026-02-10T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/),
+        })
+      )
+    })
+  })
+
   it("omits billing_record_id when left blank", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined)
     render(<PaymentForm {...baseProps()} onSubmit={onSubmit} onCancel={jest.fn()} />)
@@ -484,6 +500,27 @@ describe("PaymentForm — edit mode", () => {
     )
     expect(screen.queryByText(/must be/i)).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: /save changes/i })).not.toBeDisabled()
+  })
+
+  it("converts a changed Paid on date to a full ISO datetime in the PATCH payload", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(
+      <PaymentForm
+        {...baseProps()}
+        payment={mockPayment}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+      />
+    )
+    fireEvent.change(screen.getByLabelText(/paid on/i), { target: { value: "2026-03-15" } })
+    fireEvent.click(screen.getByRole("button", { name: /save changes/i }))
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          paid_at: expect.stringMatching(/^2026-03-15T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/),
+        })
+      )
+    })
   })
 
   it("submits only the changed fields", async () => {
