@@ -17,6 +17,14 @@ function formatDateTime(iso: string) {
   })
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
+}
+
 type View = { type: "list" } | { type: "detail"; receipt: Receipt }
 
 interface ReceiptHistoryProps {
@@ -120,7 +128,7 @@ export function ReceiptHistory({ payment, contractLabel, onError }: ReceiptHisto
           <p className="font-medium">Receipt #{receipt.receipt_number}</p>
           <p className="text-muted-foreground">{contractLabel}</p>
           <p className="text-muted-foreground">Payment amount: {payment.amount}</p>
-          <p className="text-muted-foreground">Paid on {formatDateTime(payment.paid_at)}</p>
+          <p className="text-muted-foreground">Paid on {formatDate(payment.paid_at)}</p>
           <p className="text-muted-foreground">Issued {formatDateTime(receipt.created_at)}</p>
         </div>
 
