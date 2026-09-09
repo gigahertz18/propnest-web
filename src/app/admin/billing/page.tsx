@@ -144,6 +144,13 @@ export function billingRecordIdsToResolve(
   return [...ids]
 }
 
+// A contract can have more than one lease, so the Record Payment form's
+// billing-record combobox needs every lease belonging to the selected
+// contract fetched, not just one.
+export function leaseIdsForContract(leases: Lease[], contractId: string): string[] {
+  return leases.filter((l) => l.contract_id === contractId).map((l) => l.id)
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
@@ -363,6 +370,28 @@ export default function AdminBillingPage() {
       showToast(err instanceof ApiError ? err.detail : "Failed to load billing record", "error")
     } finally {
       setResolvingBillingId(null)
+    }
+  }
+
+  // Selecting a contract in the Record Payment form must not leave its
+  // billing-record combobox empty just because no other panel on this page
+  // has happened to fetch that lease's records yet (see selectedLease effect
+  // below, which only warms the cache for whatever lease the separate
+  // "Billing history" panel has selected).
+  async function handlePaymentFormContractChange(contractId: string) {
+    const leaseIds = leaseIdsForContract(leases, contractId)
+    if (leaseIds.length === 0) return
+    try {
+      const recordLists = await Promise.all(leaseIds.map((leaseId) => billingApi.list(leaseId)))
+      setBillingRecordCache((prev) => {
+        const next = { ...prev }
+        for (const records of recordLists) {
+          for (const record of records) next[record.id] = record
+        }
+        return next
+      })
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.detail : "Failed to load billing records", "error")
     }
   }
 
@@ -889,6 +918,7 @@ export default function AdminBillingPage() {
           onSubmit={handleCreate}
           onCancel={() => setModal({ type: "closed" })}
           onError={(message) => showToast(message, "error")}
+          onContractChange={handlePaymentFormContractChange}
         />
       </Modal>
 
@@ -905,6 +935,7 @@ export default function AdminBillingPage() {
             onSubmit={handleEdit}
             onCancel={() => setModal({ type: "closed" })}
             onError={(message) => showToast(message, "error")}
+            onContractChange={handlePaymentFormContractChange}
           />
         </Modal>
       )}
