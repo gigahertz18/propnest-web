@@ -207,3 +207,30 @@ describe("usersApi.delete", () => {
     await expect(usersApi.delete("self-id")).rejects.toThrow(ApiError)
   })
 })
+
+// ─── detail type-space edge cases (shared extractDetail behavior) ─────────────
+
+describe("usersApi detail extraction", () => {
+  it("joins FastAPI's structured 422 validation error array by msg", async () => {
+    mockFetch.mockReturnValue(
+      mockResponse(
+        { detail: [{ loc: ["body", "email"], msg: "invalid email", type: "value_error" }] },
+        422
+      )
+    )
+    const payload = {
+      full_name: "Jane Smith",
+      username: "janesmith",
+      email: "not-an-email",
+      password: "password123",
+      role: "user" as const,
+      is_active: true,
+    }
+    try {
+      await usersApi.create(payload)
+      throw new Error("expected usersApi.create to reject")
+    } catch (err) {
+      expect((err as ApiError).detail).toBe("invalid email")
+    }
+  })
+})

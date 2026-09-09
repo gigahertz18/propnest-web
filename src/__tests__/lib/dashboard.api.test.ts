@@ -64,4 +64,16 @@ describe("dashboardApi", () => {
       detail: "Request failed with status 500",
     })
   })
+
+  it("resolves without error on 204 instead of throwing on an empty JSON body", async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        status: 204,
+        json: () => Promise.reject(new Error("No body")),
+      } as Response)
+    )
+
+    await expect(dashboardApi.get()).resolves.toBeUndefined()
+  })
 })

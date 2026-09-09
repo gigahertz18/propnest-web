@@ -8,6 +8,7 @@
 
 import type { TokenResponse, CurrentUser, LoginPayload } from "@/types"
 import { ApiError } from "@/types"
+import { extractDetail } from "@/lib/api/utility"
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"
 const API_PREFIX = "/api/v1"
@@ -36,7 +37,7 @@ async function backendFetch<T>(
     let detail = `Request failed with status ${res.status}`
     try {
       const body = await res.json()
-      detail = body.detail ?? detail
+      detail = extractDetail(body, detail)
     } catch {
       // response body wasn't JSON — use default message
     }

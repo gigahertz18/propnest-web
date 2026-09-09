@@ -365,3 +365,38 @@ describe("propertiesApi.deleteImage", () => {
     await expect(propertiesApi.deleteImage("prop-uuid-1", "doc-1")).rejects.toThrow(ApiError)
   })
 })
+
+// ─── detail type-space edge cases (shared extractDetail behavior) ─────────────
+
+describe("propertiesApi detail extraction", () => {
+  it("joins FastAPI's structured 422 validation error array by msg", async () => {
+    mockFetch.mockReturnValue(
+      mockResponse(
+        { detail: [{ loc: ["body", "name"], msg: "field required", type: "missing" }] },
+        422
+      )
+    )
+    try {
+      await propertiesApi.create(createPayload)
+      throw new Error("expected propertiesApi.create to reject")
+    } catch (err) {
+      expect((err as ApiError).detail).toBe("field required")
+    }
+  })
+
+  it("joins the 422 validation error array by msg on uploadImage's independent fetch path", async () => {
+    mockFetch.mockReturnValue(
+      mockResponse(
+        { detail: [{ loc: ["body", "file"], msg: "file required", type: "missing" }] },
+        422
+      )
+    )
+    const mockFile = new File(["img content"], "photo.jpg", { type: "image/jpeg" })
+    try {
+      await propertiesApi.uploadImage("prop-uuid-1", mockFile)
+      throw new Error("expected propertiesApi.uploadImage to reject")
+    } catch (err) {
+      expect((err as ApiError).detail).toBe("file required")
+    }
+  })
+})
