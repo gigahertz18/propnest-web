@@ -6,6 +6,7 @@
  * Never runs in the browser.
  */
 
+import { cache } from "react"
 import { cookies } from "next/headers"
 import type { CurrentUser } from "@/types"
 import { backendGetMe } from "@/lib/api/backend"
@@ -32,8 +33,12 @@ export async function getToken(): Promise<string | null> {
 /**
  * Get the current user by reading the cookie and calling /auth/me.
  * Returns null if no token or token is invalid/expired.
+ *
+ * Wrapped in React's cache() so multiple Server Components in the same
+ * request (e.g. the root layout and a page) share one backend call instead
+ * of each triggering their own /auth/me round-trip.
  */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const token = await getToken()
   if (!token) return null
 
@@ -42,4 +47,4 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   } catch {
     return null
   }
-}
+})
