@@ -73,7 +73,7 @@ Tests
 Build
 ```
 
-Type check runs before tests since it's the cheaper failure to surface first (Jest's SWC transform strips types without checking them, so it won't catch a genuine type error on its own). Build runs last since it's the most expensive step - nopoint paying for it if an earlier, cheaper gate has already failed the PR.
+Type check runs before tests since it's the cheaper failure to surface first (Jest's SWC transform strips types without checking them, so it won't catch a genuine type error on its own). Build runs last since it's the most expensive step - no point paying for it if an earlier, cheaper gate has already failed the PR.
 
 ---
 
