@@ -7,10 +7,18 @@ import { useAuth } from "@/context/AuthContext"
 export default function AdminNav() {
   const { user, logout } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleLogout() {
     setLoggingOut(true)
-    await logout()
+    setError(null)
+    try {
+      await logout()
+    } catch {
+      setError("Failed to log out. Please try again.")
+    } finally {
+      setLoggingOut(false)
+    }
   }
 
   return (
@@ -38,6 +46,7 @@ export default function AdminNav() {
         >
           {loggingOut ? "Logging out…" : "Log out"}
         </button>
+        {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
     </header>
   )
