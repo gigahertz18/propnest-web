@@ -53,7 +53,15 @@ test-fe-ci:
 typecheck-fe-ci:
 	npx tsc --noEmit
 
+# The frontend service's docker-compose volumes declare an anonymous
+# `/app/.next` volume so the container's dev server doesn't leak build
+# output onto the host — but that means every `docker compose run` for this
+# service (including lint-fe/format-fe above, which never touch `.next`)
+# makes Docker create a `.next` mount-point directory on this host checkout,
+# owned by root. `.next` is gitignored and never legitimately present before
+# a build, so it's safe to clear before building as this non-root CI user.
 build-fe-ci:
+	rm -rf .next
 	npm run build
 
 test-fe-watch:
