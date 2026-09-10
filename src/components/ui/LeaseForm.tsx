@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/combobox"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { contractLabel } from "@/lib/utils"
 
 // ─── Lease Form ─────────────────────────────────────────────────────────────
 
@@ -51,14 +52,6 @@ const RENEWAL_OPTION_LABELS: Record<RenewalOption, string> = {
 const LEASE_STATUS_LABELS: Record<LeaseStatus, string> = {
   ACTIVE: "Active",
   ENDED: "Ended",
-}
-
-function contractLabel(contract: Contract, properties: Property[], tenants: Tenant[]) {
-  const propertyName =
-    properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
-  const tenantName =
-    tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
-  return `${propertyName} — ${tenantName}`
 }
 
 interface LeaseFormProps {

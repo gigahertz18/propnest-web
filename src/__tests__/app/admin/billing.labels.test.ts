@@ -7,7 +7,7 @@
  * (and period/status, for a billing record) it actually belongs to.
  */
 
-import { contractLabel, leaseLabel, billingRecordLabel } from "@/app/admin/billing/page"
+import { contractLabel, leaseLabel, billingRecordLabel } from "@/lib/utils"
 import type { Contract } from "@/types/contract"
 import type { Property } from "@/types/property"
 import type { Tenant } from "@/types/tenant"

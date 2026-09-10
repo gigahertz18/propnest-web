@@ -9,7 +9,7 @@
  * empty combobox with nothing to pick, even though real records exist.
  */
 
-import { billingRecordIdsToResolve } from "@/app/admin/billing/page"
+import { billingRecordIdsToResolve } from "@/lib/utils"
 import type { Payment } from "@/types/payment"
 import type { BillingRecord } from "@/types/billing"
 

@@ -7,7 +7,7 @@
  * cross-referencing the loaded leases list's contract_id values.
  */
 
-import { getEligibleContracts } from "@/app/admin/leases/page"
+import { getEligibleContracts } from "@/lib/utils"
 import type { Contract } from "@/types/contract"
 import type { Lease } from "@/types/lease"
 

@@ -14,6 +14,7 @@ import { leasesApi } from "@/lib/api/leases"
 import { contractsApi } from "@/lib/api/contracts"
 import { propertiesApi } from "@/lib/api/properties"
 import { tenantsApi } from "@/lib/api/tenants"
+import { getEligibleContracts } from "@/lib/utils"
 import Modal from "@/components/ui/Modal"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -38,17 +39,6 @@ type ModalState =
   | { type: "delete"; lease: Lease }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * A Lease may only be created against a long-term Contract that doesn't
- * already have a Lease (docs/product/phase-2.md). There is no dedicated
- * "eligible contracts" backend endpoint, so this is computed client-side by
- * cross-referencing the loaded leases list's contract_id values.
- */
-export function getEligibleContracts(contracts: Contract[], leases: Lease[]): Contract[] {
-  const contractIdsWithLease = new Set(leases.map((l) => l.contract_id))
-  return contracts.filter((c) => c.rental_type === "long_term" && !contractIdsWithLease.has(c.id))
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {

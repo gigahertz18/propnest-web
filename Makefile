@@ -45,6 +45,17 @@ test-fe:
 test-fe-ci:
 	npx jest --passWithNoTests
 
+# Same rationale as test-fe-ci: CI already has deps installed directly on
+# the runner, so these run npx/npm directly rather than through Docker.
+# tsc alone won't catch every failure `next build` can produce (invalid
+# Route Handler exports, server/client boundary violations), so both are
+# run as separate, independently-attributable CI gates.
+typecheck-fe-ci:
+	npx tsc --noEmit
+
+build-fe-ci:
+	npm run build
+
 test-fe-watch:
 	$(TEST_EXEC) frontend npx jest --watch
 
@@ -84,5 +95,6 @@ clean:
         db-shell be-shell fe-shell seed \
         migrate-new migrate-up migrate-down migrate-history \
         test-fe test-fe-ci test-fe-watch test-fe-cov test-fe-file \
+		typecheck-fe-ci build-fe-ci \
         lint-fe lint-fe-fix format-fe format-fe-fix \
         test-all ps clean
