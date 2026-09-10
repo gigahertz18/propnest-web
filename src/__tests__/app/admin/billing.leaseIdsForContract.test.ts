@@ -6,7 +6,7 @@
  * lease id) is what determines which leases to fetch for.
  */
 
-import { leaseIdsForContract } from "@/app/admin/billing/page"
+import { leaseIdsForContract } from "@/lib/utils"
 import type { Lease } from "@/types/lease"
 
 function makeLease(overrides: Partial<Lease>): Lease {

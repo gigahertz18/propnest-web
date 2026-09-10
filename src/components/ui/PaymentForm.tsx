@@ -34,6 +34,7 @@ import {
   ComboboxItem,
 } from "@/components/ui/combobox"
 import { Button } from "@/components/ui/button"
+import { billingRecordLabel, contractLabel } from "@/lib/utils"
 
 // ─── Payment Form ───────────────────────────────────────────────────────────
 
@@ -95,14 +96,6 @@ const REFERENCE_NUMBER_FORMATS: Record<PaymentMethod, ReferenceNumberFormat> = {
   },
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
 function isReferenceNumberValid(format: ReferenceNumberFormat | undefined, value: string): boolean {
   if (!format || format.disabled) return true
   const trimmed = value.trim()
@@ -120,39 +113,6 @@ function referenceNumberErrorMessage(
   if (format.required && !trimmed) return "Required for this payment method."
   if (trimmed && format.pattern && !format.pattern.test(trimmed)) return `Must be ${format.hint}`
   return null
-}
-
-function contractLabel(contract: Contract, properties: Property[], tenants: Tenant[]) {
-  const propertyName =
-    properties.find((p) => p.id === contract.property_id)?.name ?? contract.property_id
-  const tenantName =
-    tenants.find((t) => t.id === contract.tenant_id)?.full_name ?? contract.tenant_id
-  return `${propertyName} — ${tenantName}`
-}
-
-function leaseLabel(
-  lease: Lease,
-  contracts: Contract[],
-  properties: Property[],
-  tenants: Tenant[]
-) {
-  const contract = contracts.find((c) => c.id === lease.contract_id)
-  return contract ? contractLabel(contract, properties, tenants) : lease.id
-}
-
-// A billing record has no name of its own — it's identified by whose lease
-// it belongs to, which period it covers, and its current status, so that's
-// what a user picking one from a list needs to see instead of its raw id.
-function billingRecordLabel(
-  record: BillingRecord,
-  leases: Lease[],
-  contracts: Contract[],
-  properties: Property[],
-  tenants: Tenant[]
-) {
-  const lease = leases.find((l) => l.id === record.lease_id)
-  const leaseName = lease ? leaseLabel(lease, contracts, properties, tenants) : record.lease_id
-  return `${leaseName} · ${formatDate(record.period_start)} – ${formatDate(record.period_end)} · ${record.status.replace(/_/g, " ")}`
 }
 
 interface PaymentFormProps {
@@ -214,7 +174,7 @@ export function PaymentForm({
 
   // A billing record only belongs to the selected contract if its lease does —
   // BillingRecord has no contract_id of its own, so this has to join through
-  // Lease.contract_id (see leaseLabel/billingRecordLabel above).
+  // Lease.contract_id (see leaseLabel/billingRecordLabel in @/lib/utils).
   const contractLeaseIds = useMemo(
     () => new Set(leases.filter((l) => l.contract_id === contractId).map((l) => l.id)),
     [leases, contractId]

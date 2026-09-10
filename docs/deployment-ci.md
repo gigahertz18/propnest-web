@@ -48,7 +48,9 @@ CI currently performs:
 4. dependency installation
 5. lint
 6. formatting
-7. tests
+7. type check (`tsc --noEmit`)
+8. tests
+9. production build (`next build`)
 
 The intended quality gates are therefore:
 
@@ -62,11 +64,18 @@ Lint
 Format
     |
     v
+Type check
+    |
+    v
 Tests
+    |
+    v
+Build
 ```
 
----
+Type check runs before tests since it's the cheaper failure to surface first (Jest's SWC transform strips types without checking them, so it won't catch a genuine type error on its own). Build runs last since it's the most expensive step - no point paying for it if an earlier, cheaper gate has already failed the PR.
 
+---
 
 ## 23. Environment Configuration
 
@@ -91,4 +100,3 @@ http://host.docker.internal:8000
 The backend URL should remain server-side and should not be exposed through a `NEXT_PUBLIC_*` variable.
 
 ---
-

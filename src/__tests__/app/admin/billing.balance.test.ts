@@ -7,7 +7,7 @@
  * client-side from those plus the payments recorded against the record.
  */
 
-import { billingBalance } from "@/app/admin/billing/page"
+import { billingBalance } from "@/lib/utils"
 import type { BillingRecord } from "@/types/billing"
 import type { Payment } from "@/types/payment"
 

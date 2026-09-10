@@ -45,6 +45,25 @@ test-fe:
 test-fe-ci:
 	npx jest --passWithNoTests
 
+# Same rationale as test-fe-ci: CI already has deps installed directly on
+# the runner, so these run npx/npm directly rather than through Docker.
+# tsc alone won't catch every failure `next build` can produce (invalid
+# Route Handler exports, server/client boundary violations), so both are
+# run as separate, independently-attributable CI gates.
+typecheck-fe-ci:
+	npx tsc --noEmit
+
+# The frontend service's docker-compose volumes declare an anonymous
+# `/app/.next` volume so the container's dev server doesn't leak build
+# output onto the host — but that means every `docker compose run` for this
+# service (including lint-fe/format-fe above, which never touch `.next`)
+# makes Docker create a `.next` mount-point directory on this host checkout,
+# owned by root. `.next` is gitignored and never legitimately present before
+# a build, so it's safe to clear before building as this non-root CI user.
+build-fe-ci:
+	rm -rf .next
+	npm run build
+
 test-fe-watch:
 	$(TEST_EXEC) frontend npx jest --watch
 
@@ -84,5 +103,6 @@ clean:
         db-shell be-shell fe-shell seed \
         migrate-new migrate-up migrate-down migrate-history \
         test-fe test-fe-ci test-fe-watch test-fe-cov test-fe-file \
+		typecheck-fe-ci build-fe-ci \
         lint-fe lint-fe-fix format-fe format-fe-fix \
         test-all ps clean

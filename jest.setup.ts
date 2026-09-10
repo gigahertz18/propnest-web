@@ -51,10 +51,13 @@ if (typeof window !== "undefined") {
   const origMatches = Element.prototype.matches
   const origWebkitMatches = Element.prototype.webkitMatchesSelector
   const alwaysFalseInJSDOM = new Set([":fullscreen", ":modal", ":picture-in-picture"])
-  Element.prototype.matches = function (selector: string) {
+  // Cast needed: the lib.dom.d.ts overload set for `matches` includes
+  // generic type-predicate signatures (`is HTMLElementTagNameMap[K]`) that a plain `(selector:string) => boolean`
+  // can't structurally satisfy, even though it's a behaviorally faithful passthrough wrapper.
+  Element.prototype.matches = function (this: Element, selector: string) {
     if (alwaysFalseInJSDOM.has(selector)) return false
     return origMatches.call(this, selector)
-  }
+  } as Element["matches"]
   if (origWebkitMatches) {
     Element.prototype.webkitMatchesSelector = function (selector: string) {
       if (alwaysFalseInJSDOM.has(selector)) return false
