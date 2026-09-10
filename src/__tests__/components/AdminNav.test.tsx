@@ -157,6 +157,9 @@ describe("AdminNav — logout", () => {
       expect(screen.getByRole("button", { name: /logging out/i })).toBeInTheDocument()
     })
     resolveLogout()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^log out$/i })).toBeInTheDocument()
+    })
   })
 
   it("disables the button while logging out", async () => {
@@ -173,6 +176,9 @@ describe("AdminNav — logout", () => {
       expect(screen.getByRole("button", { name: /logging out/i })).toBeDisabled()
     })
     resolveLogout()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^log out$/i })).not.toBeDisabled()
+    })
   })
 
   it("does not call logout more than once if clicked multiple times", async () => {
@@ -191,6 +197,20 @@ describe("AdminNav — logout", () => {
     fireEvent.click(btn)
     expect(mockLogout).toHaveBeenCalledTimes(1)
     resolveLogout()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^log out$/i })).not.toBeDisabled()
+    })
+  })
+
+  it("re-enables the button and shows an error when logout fails", async () => {
+    mockLogout.mockRejectedValue(new Error("network error"))
+    setupAuth()
+    render(<AdminNav />)
+    fireEvent.click(screen.getByRole("button", { name: /log out/i }))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^log out$/i })).not.toBeDisabled()
+    })
+    expect(screen.getByText(/failed to log out/i)).toBeInTheDocument()
   })
 })
 
