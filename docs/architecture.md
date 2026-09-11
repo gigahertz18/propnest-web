@@ -268,7 +268,7 @@ These are not current defects; they are future architectural decisions.
 4. Should API response types eventually be generated from backend schemas to eliminate duplication?
 5. Should property images become a first-class frontend feature module instead of being embedded inside property API helpers?
 6. Should role-aware navigation be centralized into a route/permission configuration?
-7. Should E2E testing become part of CI once the primary user workflows stabilize?
+7. Should E2E testing become part of CI once the primary user workflows stabilize? (Local Docker-based E2E now exists via `make test-e2e` — see `docs/testing.md` — but CI wiring remains deferred; it would need `propnest-api` running as a CI service container or mock.)
 
 ---
 

@@ -75,6 +75,8 @@ Build
 
 Type check runs before tests since it's the cheaper failure to surface first (Jest's SWC transform strips types without checking them, so it won't catch a genuine type error on its own). Build runs last since it's the most expensive step - no point paying for it if an earlier, cheaper gate has already failed the PR.
 
+E2E tests (Playwright, see `docs/testing.md`) run locally only via `make test-e2e` and are not yet part of this CI pipeline — wiring them in would require a CI-reachable `propnest-api` (a service container or mock), which is deferred.
+
 ---
 
 ## 23. Environment Configuration

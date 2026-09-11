@@ -1,0 +1,13 @@
+# Playwright requires Debian/Ubuntu system deps for its browser binaries —
+# docker/Dockerfile's node:22-alpine base uses musl libc and does not
+# reliably support them, so this is a standalone image.
+#
+# Keep this tag in lockstep with @playwright/test's version in package.json —
+# a mismatch causes a runtime browser-version-mismatch error.
+FROM mcr.microsoft.com/playwright:v1.55.0-noble
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+CMD ["npx", "playwright", "test"]

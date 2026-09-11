@@ -84,3 +84,31 @@ Priority E2E journeys:
 
 ---
 
+## 19. End-to-End Testing (Playwright, Docker)
+
+E2E tests run via Playwright, entirely inside Docker — no host-level browser
+install, extension, or cached binaries are required.
+
+Run with:
+
+```bash
+make test-e2e
+```
+
+This builds `docker/Dockerfile.e2e` (based on the official
+`mcr.microsoft.com/playwright` image, which ships browsers pre-installed),
+waits for the `frontend` service to report healthy, then runs
+`npx playwright test` against it over the existing `propnest_network`.
+
+Current coverage is a single smoke test
+(`e2e/smoke.spec.ts`): an unauthenticated visit to `/` redirects to `/login`
+and the login form renders. It has no backend dependency.
+
+The 5 priority E2E journeys listed above remain future work — each requires
+a running, seeded `propnest-api` backend, which this scaffold does not yet
+provision.
+
+`@playwright/test`'s version in `package.json` must stay in lockstep with the
+image tag in `docker/Dockerfile.e2e` — a mismatch between the two causes a
+runtime browser-version error.
+
