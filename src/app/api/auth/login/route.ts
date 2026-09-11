@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { backendLogin, backendGetMe } from "@/lib/api/backend"
 import { AUTH_COOKIE, COOKIE_OPTIONS } from "@/lib/auth/session"
 import type { LoginPayload } from "@/types"
-import { ApiError } from "@/types"
+import { handleApiError } from "@/lib/api/shared/routeResponses"
 
 export async function POST(req: NextRequest) {
   let body: LoginPayload
@@ -36,13 +36,6 @@ export async function POST(req: NextRequest) {
 
     return response
   } catch (err) {
-    if (err instanceof ApiError) {
-      return NextResponse.json({ detail: err.detail }, { status: err.status })
-    }
-    console.error("[auth/login] Unexpected error:", err)
-    return NextResponse.json(
-      { detail: "An unexpected error occurred. Please try again." },
-      { status: 500 }
-    )
+    return handleApiError("auth/login", err)
   }
 }

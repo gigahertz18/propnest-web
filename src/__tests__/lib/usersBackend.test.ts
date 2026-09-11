@@ -1,15 +1,12 @@
 /**
  * Tests for lib/api/usersBackend.ts
  *
- * Covers the server-side calls to FastAPI user endpoints, including the
- * detail-extraction logic used when the backend returns a non-2xx response.
- * `detail` is an untrusted external value — it can be any JSON type, so these
- * cases are enumerated from the JSON type space itself rather than from any
- * one backend's observed shape.
+ * Covers the server-side calls to FastAPI user endpoints. Detail/fieldErrors
+ * extraction and timeout behavior are shared by every *Backend.ts module and
+ * are covered once in shared/backendFetch.test.ts rather than duplicated here.
  */
 
 import { backendListUsers, backendCreateUser } from "@/lib/api/usersBackend"
-import type { ApiError } from "@/types"
 import type { UserCreatePayload } from "@/types"
 
 const mockFetch = jest.fn()
@@ -35,63 +32,6 @@ beforeEach(() => {
   mockFetch.mockReset()
 })
 
-describe("usersBackend detail extraction", () => {
-  it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Username already exists" }, 409))
-    try {
-      await backendCreateUser("token", createPayload)
-      throw new Error("expected backendCreateUser to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Username already exists")
-    }
-  })
-
-  it("joins FastAPI's structured 422 validation error array by msg", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse(
-        { detail: [{ loc: ["body", "email"], msg: "invalid email", type: "value_error" }] },
-        422
-      )
-    )
-    try {
-      await backendCreateUser("token", createPayload)
-      throw new Error("expected backendCreateUser to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("invalid email")
-    }
-  })
-
-  it("falls back to the generic message when detail is null", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: null }, 500))
-    try {
-      await backendCreateUser("token", createPayload)
-      throw new Error("expected backendCreateUser to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toContain("500")
-    }
-  })
-
-  it("stringifies a numeric detail", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: 42 }, 500))
-    try {
-      await backendCreateUser("token", createPayload)
-      throw new Error("expected backendCreateUser to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("42")
-    }
-  })
-
-  it("JSON-stringifies a plain object detail with no msg field", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { code: "E_CONFLICT" } }, 409))
-    try {
-      await backendCreateUser("token", createPayload)
-      throw new Error("expected backendCreateUser to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(JSON.stringify({ code: "E_CONFLICT" }))
-    }
-  })
-})
-
 describe("usersBackend actions", () => {
   it("backendListUsers GETs /users/", async () => {
     mockFetch.mockReturnValue(mockResponse([]))
@@ -100,6 +40,16 @@ describe("usersBackend actions", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/users/"),
       expect.objectContaining({ method: "GET" })
+    )
+  })
+
+  it("backendCreateUser POSTs the payload to /users/", async () => {
+    mockFetch.mockReturnValue(mockResponse({ id: "user-uuid-1", ...createPayload }, 201))
+    const result = await backendCreateUser("token", createPayload)
+    expect(result).toEqual({ id: "user-uuid-1", ...createPayload })
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/users/"),
+      expect.objectContaining({ method: "POST", body: JSON.stringify(createPayload) })
     )
   })
 })

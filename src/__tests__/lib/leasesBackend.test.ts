@@ -1,10 +1,9 @@
 /**
  * Tests for lib/api/leasesBackend.ts
  *
- * Covers the server-side detail-extraction logic used when the FastAPI
- * backend returns a non-2xx response. `detail` is an untrusted external
- * value — it can be any JSON type, so these cases are enumerated from the
- * JSON type space itself rather than from any one backend's observed shape.
+ * Covers the server-side calls to FastAPI lease endpoints. Detail/fieldErrors
+ * extraction and timeout behavior are shared by every *Backend.ts module and
+ * are covered once in shared/backendFetch.test.ts rather than duplicated here.
  */
 
 import {
@@ -14,7 +13,6 @@ import {
   backendUpdateLease,
   backendDeleteLease,
 } from "@/lib/api/leasesBackend"
-import type { ApiError } from "@/types"
 import type { Lease, LeaseCreatePayload } from "@/types/lease"
 
 const mockFetch = jest.fn()
@@ -56,125 +54,6 @@ const mockLease: Lease = {
 
 beforeEach(() => {
   mockFetch.mockReset()
-})
-
-describe("leasesBackend detail extraction", () => {
-  it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Contract already has a lease" }, 409))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Contract already has a lease")
-    }
-  })
-
-  it("joins FastAPI's structured 422 validation error array by msg", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse(
-        {
-          detail: [
-            {
-              loc: ["body", "due_day"],
-              msg: "Input should be less than or equal to 31",
-              type: "less_than_equal",
-            },
-          ],
-        },
-        422
-      )
-    )
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Input should be less than or equal to 31")
-    }
-  })
-
-  it("falls back to the generic message when detail is null", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: null }, 500))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toContain("500")
-    }
-  })
-
-  it("falls back to the generic message when detail is an empty array", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: [] }, 422))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toContain("422")
-    }
-  })
-
-  it("stringifies a numeric detail", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: 42 }, 500))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("42")
-    }
-  })
-
-  it("stringifies a boolean detail", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: false }, 500))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("false")
-    }
-  })
-
-  it("joins an array of plain strings", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: ["first problem", "second problem"] }, 422))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("first problem; second problem")
-    }
-  })
-
-  it("JSON-stringifies array entries that have no msg field", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: [{ code: "E_CONFLICT", loc: ["body", "status"] }] }, 422)
-    )
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(
-        JSON.stringify({ code: "E_CONFLICT", loc: ["body", "status"] })
-      )
-    }
-  })
-
-  it("extracts msg from a single (non-array) error object", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { msg: "single structured error" } }, 422))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("single structured error")
-    }
-  })
-
-  it("JSON-stringifies a plain object detail with no msg field", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { code: "E_CONFLICT" } }, 409))
-    try {
-      await backendCreateLease("token", createPayload)
-      throw new Error("expected backendCreateLease to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(JSON.stringify({ code: "E_CONFLICT" }))
-    }
-  })
 })
 
 describe("leasesBackend CRUD", () => {

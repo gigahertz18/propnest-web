@@ -1,11 +1,11 @@
 /**
  * Tests for lib/api/propertiesBackend.ts
  *
- * Covers the server-side calls to FastAPI property endpoints, including the
- * detail-extraction logic used when the backend returns a non-2xx response.
- * `detail` is an untrusted external value — it can be any JSON type, so these
- * cases are enumerated from the JSON type space itself rather than from any
- * one backend's observed shape.
+ * Covers the server-side calls to FastAPI property endpoints. Detail/
+ * fieldErrors extraction and timeout behavior are shared by every
+ * *Backend.ts module and are covered once in shared/backendFetch.test.ts
+ * rather than duplicated here — except one regression case confirming the
+ * multipart upload path is also wired through the shared error handling.
  */
 
 import {
@@ -39,61 +39,6 @@ beforeEach(() => {
 })
 
 describe("propertiesBackend detail extraction", () => {
-  it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Property already exists" }, 409))
-    try {
-      await backendCreateProperty("token", createPayload)
-      throw new Error("expected backendCreateProperty to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Property already exists")
-    }
-  })
-
-  it("joins FastAPI's structured 422 validation error array by msg", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse(
-        { detail: [{ loc: ["body", "name"], msg: "field required", type: "missing" }] },
-        422
-      )
-    )
-    try {
-      await backendCreateProperty("token", createPayload)
-      throw new Error("expected backendCreateProperty to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("field required")
-    }
-  })
-
-  it("falls back to the generic message when detail is null", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: null }, 500))
-    try {
-      await backendCreateProperty("token", createPayload)
-      throw new Error("expected backendCreateProperty to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toContain("500")
-    }
-  })
-
-  it("stringifies a numeric detail", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: 42 }, 500))
-    try {
-      await backendCreateProperty("token", createPayload)
-      throw new Error("expected backendCreateProperty to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("42")
-    }
-  })
-
-  it("JSON-stringifies a plain object detail with no msg field", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { code: "E_CONFLICT" } }, 409))
-    try {
-      await backendCreateProperty("token", createPayload)
-      throw new Error("expected backendCreateProperty to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(JSON.stringify({ code: "E_CONFLICT" }))
-    }
-  })
-
   it("joins the 422 validation error array by msg on the multipart upload path", async () => {
     mockFetch.mockReturnValue(
       mockResponse(
@@ -119,6 +64,16 @@ describe("propertiesBackend actions", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/v1/properties/"),
       expect.objectContaining({ method: "GET" })
+    )
+  })
+
+  it("backendCreateProperty POSTs the payload to /properties/", async () => {
+    mockFetch.mockReturnValue(mockResponse({ id: "prop-uuid-1", ...createPayload }, 201))
+    const result = await backendCreateProperty("token", createPayload)
+    expect(result).toEqual({ id: "prop-uuid-1", ...createPayload })
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/properties/"),
+      expect.objectContaining({ method: "POST", body: JSON.stringify(createPayload) })
     )
   })
 })

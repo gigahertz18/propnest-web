@@ -1,16 +1,13 @@
 /**
  * Tests for lib/api/dashboardBackend.ts
  *
- * Covers the server-side call to FastAPI's dashboard aggregation endpoint,
- * including the detail-extraction logic used when the backend returns a
- * non-2xx response. `detail` is an untrusted external value — it can be any
- * JSON type, so these cases are enumerated from the JSON type space itself
- * rather than from any one backend's observed shape (mirrors
- * billingBackend.test.ts).
+ * Covers the server-side call to FastAPI's dashboard aggregation endpoint.
+ * Detail/fieldErrors extraction and timeout behavior are shared by every
+ * *Backend.ts module and are covered once in shared/backendFetch.test.ts
+ * rather than duplicated here.
  */
 
 import { backendGetDashboardSummary } from "@/lib/api/dashboardBackend"
-import type { ApiError } from "@/types"
 import type { DashboardSummary } from "@/types/dashboard"
 
 const mockFetch = jest.fn()
@@ -121,72 +118,5 @@ describe("backendGetDashboardSummary", () => {
     )
 
     await expect(backendGetDashboardSummary("token")).resolves.toBeUndefined()
-  })
-})
-
-describe("backendGetDashboardSummary detail extraction", () => {
-  it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: "Something went wrong" }, 500))
-    try {
-      await backendGetDashboardSummary("token")
-      throw new Error("expected backendGetDashboardSummary to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Something went wrong")
-    }
-  })
-
-  it("joins FastAPI's structured 422 validation error array by msg", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse(
-        {
-          detail: [
-            { loc: ["query", "recent_payments_limit"], msg: "field required", type: "missing" },
-          ],
-        },
-        422
-      )
-    )
-    try {
-      await backendGetDashboardSummary("token")
-      throw new Error("expected backendGetDashboardSummary to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("field required")
-    }
-  })
-
-  it("stringifies a plain-object detail with no msg field", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { code: "AGGREGATION_FAILED" } }, 500))
-    try {
-      await backendGetDashboardSummary("token")
-      throw new Error("expected backendGetDashboardSummary to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(JSON.stringify({ code: "AGGREGATION_FAILED" }))
-    }
-  })
-
-  it("falls back to a generic message when detail is an empty array", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: [] }, 500))
-    try {
-      await backendGetDashboardSummary("token")
-      throw new Error("expected backendGetDashboardSummary to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Request failed with status 500")
-    }
-  })
-
-  it("falls back to a generic message when the response body isn't JSON", async () => {
-    mockFetch.mockReturnValue(
-      Promise.resolve({
-        ok: false,
-        status: 503,
-        json: () => Promise.reject(new Error("not json")),
-      } as unknown as Response)
-    )
-    try {
-      await backendGetDashboardSummary("token")
-      throw new Error("expected backendGetDashboardSummary to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Request failed with status 503")
-    }
   })
 })

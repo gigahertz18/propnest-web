@@ -1,8 +1,9 @@
 /**
- * lib/api/utility.ts
+ * lib/api/shared/utility.ts
  *
- * Shared helpers for lib/api/*.ts and *Backend.ts modules. Safe to import in
- * both client and server code — no env vars, no "use client" boundary.
+ * Helper used by the two shared fetch wrappers (backendFetch.ts, apiFetch.ts)
+ * to normalize an error response's `detail` field. Safe to import in both
+ * client and server code — no env vars, no "use client" boundary.
  */
 
 /**
