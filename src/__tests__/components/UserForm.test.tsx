@@ -246,16 +246,28 @@ describe("UserForm — edit mode", () => {
 // ─── Edge cases ───────────────────────────────────────────────────────────────
 
 describe("UserForm — edge cases", () => {
-  it("trims whitespace-only full name — submit stays disabled", async () => {
+  it("submit stays disabled when full name is whitespace-only", async () => {
     render(<UserForm onSubmit={jest.fn()} onCancel={jest.fn()} />)
     fillCreateForm({ fullName: "   " })
-    // fullName is just spaces — input has value but component checks truthiness
-    // The field itself won't be empty but the !fullName check catches empty string
-    // For whitespace, HTML required attribute handles it natively
-    const submitBtn = screen.getByRole("button", { name: /create user/i })
-    // If fullName is spaces it passes our check (truthy string) but HTML validation fires
-    // We verify the form does not call onSubmit with only whitespace
-    expect(submitBtn).toBeDefined()
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create user/i })).toBeDisabled()
+    })
+  })
+
+  it("submit stays disabled when username is whitespace-only", async () => {
+    render(<UserForm onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    fillCreateForm({ username: "   " })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create user/i })).toBeDisabled()
+    })
+  })
+
+  it("submit stays disabled when email is whitespace-only", async () => {
+    render(<UserForm onSubmit={jest.fn()} onCancel={jest.fn()} />)
+    fillCreateForm({ email: "   " })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create user/i })).toBeDisabled()
+    })
   })
 
   it("does not call onSubmit when cancel is clicked during loading", async () => {

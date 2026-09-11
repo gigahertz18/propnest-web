@@ -64,7 +64,8 @@ export default function UserForm({ user, onSubmit, onCancel, onError }: UserForm
     }
   }
 
-  const isSubmitDisabled = loading || !fullName || !username || !email || (!isEdit && !password)
+  const isSubmitDisabled =
+    loading || !fullName.trim() || !username.trim() || !email.trim() || (!isEdit && !password)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
