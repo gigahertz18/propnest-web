@@ -359,3 +359,108 @@ describe("LeaseForm — edit mode", () => {
     expect(screen.getByRole("button", { name: /save changes/i })).not.toBeDisabled()
   })
 })
+
+// ─── Range validation ─────────────────────────────────────────────────────────
+
+async function fillOtherRequiredFields() {
+  await selectContract("Sunset Villa — Jane Doe")
+  fireEvent.change(screen.getByLabelText(/monthly rent/i), { target: { value: "15000" } })
+  fireEvent.change(screen.getByLabelText(/due day/i), { target: { value: "5" } })
+  fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: "2026-01-01" } })
+}
+
+describe("LeaseForm — range validation", () => {
+  it("rejects an out-of-range due day client-side and does not call onSubmit", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined)
+    render(
+      <LeaseForm
+        contracts={mockContracts}
+        properties={mockProperties}
+        tenants={mockTenants}
+        onSubmit={onSubmit}
+        onCancel={jest.fn()}
+      />
+    )
+    await fillOtherRequiredFields()
+    const dueDay = screen.getByLabelText(/due day/i)
+
+    fireEvent.change(dueDay, { target: { value: "32" } })
+    fireEvent.blur(dueDay)
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/must be between 1 and 31/i)).toBeInTheDocument()
+
+    fireEvent.change(dueDay, { target: { value: "0" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).toBeDisabled()
+    })
+
+    fireEvent.change(dueDay, { target: { value: "15" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).not.toBeDisabled()
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: /create lease/i }))
+    await waitFor(() => {
+      expect(onSubmit).not.toHaveBeenCalledWith(expect.objectContaining({ due_day: 32 }))
+    })
+  })
+
+  it("rejects an out-of-range late fee percent client-side", async () => {
+    render(
+      <LeaseForm
+        contracts={mockContracts}
+        properties={mockProperties}
+        tenants={mockTenants}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    )
+    await fillOtherRequiredFields()
+    const lateFeePercent = screen.getByLabelText(/late fee percent/i)
+
+    fireEvent.change(lateFeePercent, { target: { value: "101" } })
+    fireEvent.blur(lateFeePercent)
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/must be between 0 and 100/i)).toBeInTheDocument()
+
+    fireEvent.change(lateFeePercent, { target: { value: "-1" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).toBeDisabled()
+    })
+
+    fireEvent.change(lateFeePercent, { target: { value: "10" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).not.toBeDisabled()
+    })
+  })
+
+  it("rejects a negative grace period client-side", async () => {
+    render(
+      <LeaseForm
+        contracts={mockContracts}
+        properties={mockProperties}
+        tenants={mockTenants}
+        onSubmit={jest.fn()}
+        onCancel={jest.fn()}
+      />
+    )
+    await fillOtherRequiredFields()
+    const gracePeriod = screen.getByLabelText(/grace period/i)
+
+    fireEvent.change(gracePeriod, { target: { value: "-1" } })
+    fireEvent.blur(gracePeriod)
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).toBeDisabled()
+    })
+    expect(screen.getByText(/must be 0 or greater/i)).toBeInTheDocument()
+
+    fireEvent.change(gracePeriod, { target: { value: "0" } })
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create lease/i })).not.toBeDisabled()
+    })
+  })
+})

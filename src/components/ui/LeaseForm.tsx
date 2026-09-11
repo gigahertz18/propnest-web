@@ -54,6 +54,37 @@ const LEASE_STATUS_LABELS: Record<LeaseStatus, string> = {
   ENDED: "Ended",
 }
 
+// `noValidate` disables the browser's own min/max enforcement (see the <form>
+// below), so these mirror the declared min/max on their inputs in JS.
+function isDueDayValid(value: string): boolean {
+  if (value === "") return false
+  const n = Number(value)
+  return n >= 1 && n <= 31
+}
+
+function dueDayErrorMessage(value: string): string | null {
+  return isDueDayValid(value) ? null : "Must be between 1 and 31."
+}
+
+function isLateFeePercentValid(value: string): boolean {
+  if (value === "") return true
+  const n = Number(value)
+  return n >= 0 && n <= 100
+}
+
+function lateFeePercentErrorMessage(value: string): string | null {
+  return isLateFeePercentValid(value) ? null : "Must be between 0 and 100."
+}
+
+function isGracePeriodDaysValid(value: string): boolean {
+  if (value === "") return true
+  return Number(value) >= 0
+}
+
+function gracePeriodDaysErrorMessage(value: string): string | null {
+  return isGracePeriodDaysValid(value) ? null : "Must be 0 or greater."
+}
+
 interface LeaseFormProps {
   lease?: Lease
   contracts: Contract[]
@@ -92,13 +123,18 @@ export function LeaseForm({
   const [endDate, setEndDate] = useState(lease?.end_date ?? "")
 
   const [loading, setLoading] = useState(false)
+  const [dueDayTouched, setDueDayTouched] = useState(false)
+  const [lateFeePercentTouched, setLateFeePercentTouched] = useState(false)
+  const [gracePeriodDaysTouched, setGracePeriodDaysTouched] = useState(false)
 
   const noEligibleContracts = !isEdit && contracts.length === 0
 
   const requiredFilled =
     contractId.trim() &&
     monthlyRent.trim() &&
-    dueDay !== "" &&
+    isDueDayValid(dueDay) &&
+    isLateFeePercentValid(lateFeePercent) &&
+    isGracePeriodDaysValid(gracePeriodDays) &&
     startDate.trim() &&
     (isEdit || contracts.length > 0)
 
@@ -216,9 +252,13 @@ export function LeaseForm({
             step="1"
             value={dueDay}
             onChange={(e) => setDueDay(e.target.value)}
+            onBlur={() => setDueDayTouched(true)}
             disabled={loading}
             required
           />
+          {dueDayTouched && dueDayErrorMessage(dueDay) && (
+            <p className="text-destructive text-xs">{dueDayErrorMessage(dueDay)}</p>
+          )}
         </div>
       </div>
 
@@ -357,8 +397,12 @@ export function LeaseForm({
             max={100}
             value={lateFeePercent ?? ""}
             onChange={(e) => setLateFeePercent(e.target.value)}
+            onBlur={() => setLateFeePercentTouched(true)}
             disabled={loading}
           />
+          {lateFeePercentTouched && lateFeePercentErrorMessage(lateFeePercent) && (
+            <p className="text-destructive text-xs">{lateFeePercentErrorMessage(lateFeePercent)}</p>
+          )}
         </div>
       </div>
 
@@ -371,8 +415,12 @@ export function LeaseForm({
           step="1"
           value={gracePeriodDays}
           onChange={(e) => setGracePeriodDays(e.target.value)}
+          onBlur={() => setGracePeriodDaysTouched(true)}
           disabled={loading}
         />
+        {gracePeriodDaysTouched && gracePeriodDaysErrorMessage(gracePeriodDays) && (
+          <p className="text-destructive text-xs">{gracePeriodDaysErrorMessage(gracePeriodDays)}</p>
+        )}
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
