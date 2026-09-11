@@ -110,23 +110,26 @@ describe("UserForm — create mode", () => {
     expect(onCancel).toHaveBeenCalledTimes(1)
   })
 
-  it("shows error message when onSubmit rejects", async () => {
+  it("calls onError with the message when onSubmit throws, instead of rendering it inline", async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error("Email already taken"))
-    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
+    const onError = jest.fn()
+    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} onError={onError} />)
     fillCreateForm()
     fireEvent.click(screen.getByRole("button", { name: /create user/i }))
     await waitFor(() => {
-      expect(screen.getByText("Email already taken")).toBeInTheDocument()
+      expect(onError).toHaveBeenCalledWith("Email already taken")
     })
+    expect(screen.queryByText("Email already taken")).not.toBeInTheDocument()
   })
 
-  it("shows generic error message for non-Error rejections", async () => {
+  it("calls onError with a generic message for non-Error rejections", async () => {
     const onSubmit = jest.fn().mockRejectedValue("unexpected string error")
-    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
+    const onError = jest.fn()
+    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} onError={onError} />)
     fillCreateForm()
     fireEvent.click(screen.getByRole("button", { name: /create user/i }))
     await waitFor(() => {
-      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument()
+      expect(onError).toHaveBeenCalledWith("Something went wrong")
     })
   })
 
@@ -153,19 +156,14 @@ describe("UserForm — create mode", () => {
     })
   })
 
-  it("clears error on resubmit", async () => {
-    const onSubmit = jest
-      .fn()
-      .mockRejectedValueOnce(new Error("First error"))
-      .mockResolvedValueOnce(undefined)
-    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} />)
+  it("re-enables the form after onSubmit throws, so the user can retry", async () => {
+    const onSubmit = jest.fn().mockRejectedValue(new Error("First error"))
+    render(<UserForm onSubmit={onSubmit} onCancel={jest.fn()} onError={jest.fn()} />)
     fillCreateForm()
-
     fireEvent.click(screen.getByRole("button", { name: /create user/i }))
-    await waitFor(() => expect(screen.getByText("First error")).toBeInTheDocument())
-
-    fireEvent.click(screen.getByRole("button", { name: /create user/i }))
-    await waitFor(() => expect(screen.queryByText("First error")).not.toBeInTheDocument())
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create user/i })).not.toBeDisabled()
+    })
   })
 })
 

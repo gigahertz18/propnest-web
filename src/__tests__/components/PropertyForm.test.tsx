@@ -184,14 +184,27 @@ describe("PropertyForm — create mode", () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it("shows error message when onSubmit throws", async () => {
+  it("calls onError with the message when onSubmit throws, instead of rendering it inline", async () => {
     const onSubmit = jest.fn().mockRejectedValue(new Error("Server error"))
-    render(<PropertyForm onSubmit={onSubmit} onCancel={jest.fn()} />)
+    const onError = jest.fn()
+    render(<PropertyForm onSubmit={onSubmit} onCancel={jest.fn()} onError={onError} />)
     fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "Place" } })
     fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Addr" } })
     fireEvent.click(screen.getByRole("button", { name: /create property/i }))
     await waitFor(() => {
-      expect(screen.getByText("Server error")).toBeInTheDocument()
+      expect(onError).toHaveBeenCalledWith("Server error")
+    })
+    expect(screen.queryByText("Server error")).not.toBeInTheDocument()
+  })
+
+  it("re-enables the form after onSubmit throws, so the user can retry", async () => {
+    const onSubmit = jest.fn().mockRejectedValue(new Error("Server error"))
+    render(<PropertyForm onSubmit={onSubmit} onCancel={jest.fn()} onError={jest.fn()} />)
+    fireEvent.change(screen.getByLabelText(/property name/i), { target: { value: "Place" } })
+    fireEvent.change(screen.getByLabelText(/address/i), { target: { value: "Addr" } })
+    fireEvent.click(screen.getByRole("button", { name: /create property/i }))
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create property/i })).not.toBeDisabled()
     })
   })
 
