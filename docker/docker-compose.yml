@@ -24,6 +24,30 @@ services:
       propnest_network:
         aliases:
           - propnest.frontend.ui
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  e2e:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.e2e
+    container_name: propnest_e2e
+    depends_on:
+      frontend:
+        condition: service_healthy
+    environment:
+      - PLAYWRIGHT_BASE_URL=http://propnest.frontend.ui:3000
+    volumes:
+      - ..:/app
+      - /app/node_modules
+      - /app/playwright-report
+      - /app/test-results
+    networks:
+      propnest_network: {}
 
 networks:
   propnest_network:

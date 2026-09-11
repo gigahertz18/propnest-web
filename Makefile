@@ -73,6 +73,12 @@ test-fe-cov:
 test-fe-file:
 	$(TEST_EXEC) frontend npx jest $(file)
 
+# ─── E2E Tests (Playwright, Docker-only) ──────────────────
+# Keep @playwright/test's version in package.json in lockstep with
+# docker/Dockerfile.e2e's image tag, or browser-version mismatches occur.
+test-e2e:
+	$(COMPOSE) run --rm e2e
+
 # ─── Frontend Lint & Format ───────────────────────────────
 lint-fe:
 	$(TEST_EXEC) frontend npx eslint src
@@ -105,4 +111,5 @@ clean:
         test-fe test-fe-ci test-fe-watch test-fe-cov test-fe-file \
 		typecheck-fe-ci build-fe-ci \
         lint-fe lint-fe-fix format-fe format-fe-fix \
+        test-e2e \
         test-all ps clean
