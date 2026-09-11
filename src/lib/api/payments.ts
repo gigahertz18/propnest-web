@@ -11,31 +11,7 @@ import type {
   PaymentUpdatePayload,
   PaymentCorrectionPayload,
 } from "@/types/payment"
-import { ApiError } from "@/types"
-import { extractDetail } from "@/lib/api/utility"
-
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    let fieldErrors: Record<string, string> | undefined
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-      fieldErrors = (body as { fieldErrors?: Record<string, string> } | null)?.fieldErrors
-    } catch {
-      /* non-JSON response */
-    }
-    throw new ApiError(res.status, detail, fieldErrors)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { apiFetch } from "@/lib/api/shared/apiFetch"
 
 export const paymentsApi = {
   list: (): Promise<Payment[]> => apiFetch<Payment[]>("/api/payments"),

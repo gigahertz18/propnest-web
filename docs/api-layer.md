@@ -21,7 +21,10 @@ These call the Next.js same-origin route handlers:
 /api/auth/*
 ```
 
-They are safe for client components.
+They are safe for client components. All nine modules share one fetch/error-normalization
+implementation, `src/lib/api/shared/apiFetch.ts` (`apiFetch`, `apiFetchMultipart` for uploads,
+`apiFetchRaw` for binary responses like the receipt PDF download), instead of each defining its
+own — every module's `ApiError` consistently carries `fieldErrors` when the route forwards them.
 
 ### 10.2 Backend-facing API helpers
 
@@ -33,15 +36,27 @@ src/lib/api/propertiesBackend.ts
 src/lib/api/usersBackend.ts
 ```
 
-These run server-side and call FastAPI directly.
+These run server-side and call FastAPI directly. All nine `*Backend.ts` modules (plus
+`backend.ts`) share one fetch/error-normalization implementation,
+`src/lib/api/shared/backendFetch.ts` (`backendFetch`, `backendFetchMultipart` for uploads,
+`backendFetchRaw` for binary responses, `backendFetchList` for list endpoints that unwrap
+FastAPI's `{items,total}` paginated envelope into a bare array), instead of each defining its own.
 
 They:
 
 - resolve `BACKEND_URL`
 - append `/api/v1`
 - attach `Authorization: Bearer <token>`
-- translate non-2xx responses into `ApiError`
-- handle normal JSON and multipart requests
+- translate non-2xx responses into `ApiError`, including field-level validation errors
+  (`ApiError.fieldErrors`) parsed from FastAPI's 422 shape, for every resource
+- apply a bounded request timeout (`BACKEND_FETCH_TIMEOUT_MS` env var, default 15s), so a hung
+  upstream call can't hang the Next.js request indefinitely
+- handle normal JSON, multipart, and raw-binary requests
+
+Route Handlers share response builders from `src/lib/api/shared/routeResponses.ts` — `handleApiError`
+(replaces each route's former local `handleError`, so every route consistently forwards
+`fieldErrors` in its JSON error response when the underlying `ApiError` has them) and `unauthorized`
+(replaces each route's former local `unauthorized`) — instead of each defining its own copies.
 
 This creates a clean boundary:
 
@@ -62,7 +77,6 @@ FastAPI
 ```
 
 ---
-
 
 ## 11. Why the Proxy Boundary Exists
 
@@ -89,7 +103,6 @@ Next.js can translate backend errors into stable same-origin responses.
 The backend deployment location can change without requiring browser-side API URL changes.
 
 ---
-
 
 ## 12. Domain Typing
 
@@ -120,7 +133,6 @@ The frontend intentionally distinguishes:
 This reduces accidental mutation of server-managed fields.
 
 ---
-
 
 ## 13. Property Feature
 
@@ -156,7 +168,6 @@ This is a useful example of the frontend adapting backend domain boundaries into
 
 ---
 
-
 ## 14. User Management Feature
 
 The current admin UI includes user management and a reusable `UserForm`.
@@ -191,7 +202,6 @@ This is preferable to sending an entire resource representation for partial upda
 
 ---
 
-
 ## 17. Contract Feature
 
 The contract feature currently provides:
@@ -207,7 +217,6 @@ The tenant field is presented as a searchable combobox filtered by tenant full n
 
 ---
 
-
 ## 18. Tenant Feature
 
 The tenant feature currently provides:
@@ -220,7 +229,6 @@ The tenant feature currently provides:
 Tenant records are referenced by the Contract feature (via the combobox described above) but remain UI-agnostic of Lease/Billing associations — those consume Tenant references, not the reverse.
 
 ---
-
 
 ## 19. Error Handling
 
@@ -260,7 +268,6 @@ This keeps transport failures distinguishable from unexpected programming/runtim
 
 ---
 
-
 ## 23. Environment Configuration
 
 The primary server-side runtime setting is:
@@ -284,4 +291,3 @@ http://host.docker.internal:8000
 The backend URL should remain server-side and should not be exposed through a `NEXT_PUBLIC_*` variable.
 
 ---
-

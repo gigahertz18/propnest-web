@@ -6,29 +6,7 @@
  */
 
 import type { Property, PropertyCreatePayload, PropertyUpdatePayload } from "@/types/property"
-import { ApiError } from "@/types"
-import { extractDetail } from "@/lib/api/utility"
-
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-    } catch {
-      /* non-JSON response */
-    }
-    throw new ApiError(res.status, detail)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { apiFetch, apiFetchMultipart } from "@/lib/api/shared/apiFetch"
 
 export const propertiesApi = {
   list: (): Promise<Property[]> => apiFetch<Property[]>("/api/properties"),
@@ -48,7 +26,7 @@ export const propertiesApi = {
   delete: (id: string): Promise<void> =>
     apiFetch<void>(`/api/properties/${id}`, { method: "DELETE" }),
 
-  uploadImage: async (
+  uploadImage: (
     propertyId: string,
     file: File
   ): Promise<{ id: string; file_url: string; filename: string }> => {
@@ -58,23 +36,10 @@ export const propertiesApi = {
     formData.append("document_type", "photo")
     formData.append("title", file.name)
 
-    const res = await fetch(`/api/properties/${propertyId}/images`, {
+    return apiFetchMultipart(`/api/properties/${propertyId}/images`, {
       method: "POST",
       body: formData,
     })
-
-    if (!res.ok) {
-      let detail = `Upload failed with status ${res.status}`
-      try {
-        const body = await res.json()
-        detail = extractDetail(body, detail)
-      } catch {
-        /* non-JSON */
-      }
-      throw new ApiError(res.status, detail)
-    }
-
-    return res.json()
   },
 
   listImages: (

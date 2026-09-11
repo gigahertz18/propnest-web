@@ -101,7 +101,7 @@ describe("receiptsApi", () => {
 
       const result = await receiptsApi.download("receipt-uuid-3", 3)
 
-      expect(mockFetch).toHaveBeenCalledWith("/api/receipts/receipt-uuid-3/download")
+      expect(mockFetch.mock.calls[0][0]).toBe("/api/receipts/receipt-uuid-3/download")
       expect(result.filename).toBe("receipt-3.pdf")
       expect(result.blob).toBeInstanceOf(Blob)
     })

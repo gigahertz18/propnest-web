@@ -1,11 +1,10 @@
 /**
  * Tests for lib/api/billingBackend.ts
  *
- * Covers the server-side calls to FastAPI billing-record endpoints,
- * including the detail-extraction logic used when the backend returns a
- * non-2xx response. `detail` is an untrusted external value — it can be any
- * JSON type, so these cases are enumerated from the JSON type space itself
- * rather than from any one backend's observed shape.
+ * Covers the server-side calls to FastAPI billing-record endpoints. Detail/
+ * fieldErrors extraction and timeout behavior are shared by every
+ * *Backend.ts module and are covered once in shared/backendFetch.test.ts
+ * rather than duplicated here.
  */
 
 import {
@@ -14,7 +13,6 @@ import {
   backendListBillingRecords,
   backendGetBillingRecord,
 } from "@/lib/api/billingBackend"
-import type { ApiError } from "@/types"
 import type { BillingRecord, BillingRecordGeneratePayload } from "@/types/billing"
 
 const mockFetch = jest.fn()
@@ -49,65 +47,6 @@ const mockBillingRecord: BillingRecord = {
 
 beforeEach(() => {
   mockFetch.mockReset()
-})
-
-describe("billingBackend detail extraction", () => {
-  it("uses a plain string detail as-is", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse({ detail: "Billing record already generated for this period" }, 409)
-    )
-    try {
-      await backendGenerateBillingRecord("token", generatePayload)
-      throw new Error("expected backendGenerateBillingRecord to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("Billing record already generated for this period")
-    }
-  })
-
-  it("joins FastAPI's structured 422 validation error array by msg", async () => {
-    mockFetch.mockReturnValue(
-      mockResponse(
-        { detail: [{ loc: ["body", "lease_id"], msg: "field required", type: "missing" }] },
-        422
-      )
-    )
-    try {
-      await backendGenerateBillingRecord("token", generatePayload)
-      throw new Error("expected backendGenerateBillingRecord to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("field required")
-    }
-  })
-
-  it("falls back to the generic message when detail is null", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: null }, 500))
-    try {
-      await backendGenerateBillingRecord("token", generatePayload)
-      throw new Error("expected backendGenerateBillingRecord to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toContain("500")
-    }
-  })
-
-  it("stringifies a numeric detail", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: 42 }, 500))
-    try {
-      await backendGenerateBillingRecord("token", generatePayload)
-      throw new Error("expected backendGenerateBillingRecord to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe("42")
-    }
-  })
-
-  it("JSON-stringifies a plain object detail with no msg field", async () => {
-    mockFetch.mockReturnValue(mockResponse({ detail: { code: "E_CONFLICT" } }, 409))
-    try {
-      await backendGenerateBillingRecord("token", generatePayload)
-      throw new Error("expected backendGenerateBillingRecord to reject")
-    } catch (err) {
-      expect((err as ApiError).detail).toBe(JSON.stringify({ code: "E_CONFLICT" }))
-    }
-  })
 })
 
 describe("billingBackend actions", () => {

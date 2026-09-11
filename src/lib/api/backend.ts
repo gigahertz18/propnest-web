@@ -7,47 +7,7 @@
  */
 
 import type { TokenResponse, CurrentUser, LoginPayload } from "@/types"
-import { ApiError } from "@/types"
-import { extractDetail } from "@/lib/api/utility"
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"
-const API_PREFIX = "/api/v1"
-
-async function backendFetch<T>(
-  path: string,
-  options: RequestInit & { token?: string } = {}
-): Promise<T> {
-  const { token, ...fetchOptions } = options
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(fetchOptions.headers as Record<string, string>),
-  }
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(`${BACKEND_URL}${API_PREFIX}${path}`, {
-    ...fetchOptions,
-    headers,
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-    } catch {
-      // response body wasn't JSON — use default message
-    }
-    throw new ApiError(res.status, detail)
-  }
-
-  if (res.status === 204) return undefined as T
-
-  return res.json() as Promise<T>
-}
+import { backendFetch } from "@/lib/api/shared/backendFetch"
 
 // ─── Auth endpoints ───────────────────────────────────────────────────────────
 

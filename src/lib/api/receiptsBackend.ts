@@ -22,38 +22,7 @@
  */
 
 import type { Receipt } from "@/types/receipt"
-import { ApiError } from "@/types"
-import { extractDetail } from "@/lib/api/utility"
-
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8000"
-const API_PREFIX = "/api/v1"
-
-async function backendFetch<T>(path: string, options: RequestInit & { token: string }): Promise<T> {
-  const { token, ...fetchOptions } = options
-
-  const res = await fetch(`${BACKEND_URL}${API_PREFIX}${path}`, {
-    ...fetchOptions,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(fetchOptions.headers as Record<string, string>),
-    },
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-    } catch {
-      /* non-JSON response */
-    }
-    throw new ApiError(res.status, detail)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { backendFetch, backendFetchRaw } from "@/lib/api/shared/backendFetch"
 
 // GET /payments/{payment_id}/receipts returns a bare array — unlike
 // contracts/payments/properties, this list is not wrapped in a
@@ -100,27 +69,14 @@ function parseFilenameFromContentDisposition(header: string | null): string | nu
  * Resolve a receipt's PDF bytes via propnest-api's own authenticated
  * GET /receipts/{id}/download endpoint. This isn't a JSON endpoint on
  * success, so it can't go through backendFetch (which always calls
- * res.json() on success) — only its error-detail handling is mirrored here.
+ * res.json() on success) — backendFetchRaw shares the same request/timeout/
+ * error handling but hands back the raw Response instead.
  */
 export async function backendGetReceiptFile(
   token: string,
   receiptId: string
 ): Promise<ReceiptFile> {
-  const res = await fetch(`${BACKEND_URL}${API_PREFIX}/receipts/${receiptId}/download`, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-    } catch {
-      /* non-JSON response */
-    }
-    throw new ApiError(res.status, detail)
-  }
+  const res = await backendFetchRaw(`/receipts/${receiptId}/download`, { method: "GET", token })
 
   return {
     bytes: await res.arrayBuffer(),

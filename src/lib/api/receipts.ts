@@ -11,28 +11,7 @@
 
 import type { Receipt } from "@/types/receipt"
 import { ApiError } from "@/types"
-import { extractDetail } from "@/lib/api/utility"
-
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  })
-
-  if (!res.ok) {
-    let detail = `Request failed with status ${res.status}`
-    try {
-      const body = await res.json()
-      detail = extractDetail(body, detail)
-    } catch {
-      /* non-JSON response */
-    }
-    throw new ApiError(res.status, detail)
-  }
-
-  if (res.status === 204) return undefined as T
-  return res.json() as Promise<T>
-}
+import { apiFetch, apiFetchRaw } from "@/lib/api/shared/apiFetch"
 
 export interface DownloadedFile {
   blob: Blob
@@ -59,23 +38,13 @@ export const receiptsApi = {
   /**
    * Fetches the receipt PDF as a Blob. Unlike the JSON endpoints above, a
    * success body is raw PDF bytes while a failure body is JSON ({detail}),
-   * so this can't reuse apiFetch (which assumes JSON on success). Also
-   * guards against a 200 response whose body isn't actually a PDF (the
-   * exact failure mode that used to silently save a JSON error as a file).
+   * so this uses apiFetchRaw (which hands back the Response instead of
+   * assuming JSON on success). Also guards against a 200 response whose body
+   * isn't actually a PDF (the exact failure mode that used to silently save
+   * a JSON error as a file).
    */
   download: async (id: string, receiptNumber?: number): Promise<DownloadedFile> => {
-    const res = await fetch(receiptsApi.downloadUrl(id))
-
-    if (!res.ok) {
-      let detail = `Request failed with status ${res.status}`
-      try {
-        const body = await res.json()
-        detail = extractDetail(body, detail)
-      } catch {
-        /* non-JSON response */
-      }
-      throw new ApiError(res.status, detail)
-    }
+    const res = await apiFetchRaw(receiptsApi.downloadUrl(id))
 
     const contentType = res.headers.get("content-type") ?? ""
     if (!contentType.includes("application/pdf")) {

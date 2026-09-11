@@ -180,6 +180,21 @@ describe("POST /api/contracts", () => {
     expect(res.status).toBe(409)
   })
 
+  it("forwards fieldErrors alongside detail when the backend flags a specific field (previously dropped before the shared handleApiError consolidation)", async () => {
+    mockGetToken.mockResolvedValue("token")
+    mockCreate.mockRejectedValue(
+      new ApiError(422, "Input should be a valid UUID", {
+        tenant_id: "Input should be a valid UUID",
+      })
+    )
+    const res = await listPOST(makeRequest({ ...payload, tenant_id: "not-a-uuid" }, "POST"))
+    expect(res.status).toBe(422)
+    expect(await res.json()).toEqual({
+      detail: "Input should be a valid UUID",
+      fieldErrors: { tenant_id: "Input should be a valid UUID" },
+    })
+  })
+
   it("returns 500 on unexpected error", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     mockGetToken.mockResolvedValue("token")

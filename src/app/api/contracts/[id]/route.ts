@@ -12,19 +12,7 @@ import {
   backendUpdateContract,
   backendDeleteContract,
 } from "@/lib/api/contractsBackend"
-import { ApiError } from "@/types"
-
-function unauthorized() {
-  return NextResponse.json({ detail: "Not authenticated" }, { status: 401 })
-}
-
-function handleError(err: unknown) {
-  if (err instanceof ApiError) {
-    return NextResponse.json({ detail: err.detail }, { status: err.status })
-  }
-  console.error("[api/contracts/[id]] Unexpected error:", err)
-  return NextResponse.json({ detail: "An unexpected error occurred" }, { status: 500 })
-}
+import { handleApiError, unauthorized } from "@/lib/api/shared/routeResponses"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken()
@@ -35,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const contract = await backendGetContract(token, id)
     return NextResponse.json(contract)
   } catch (err) {
-    return handleError(err)
+    return handleApiError("api/contracts/[id]", err)
   }
 }
 
@@ -49,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const contract = await backendUpdateContract(token, id, payload)
     return NextResponse.json(contract)
   } catch (err) {
-    return handleError(err)
+    return handleApiError("api/contracts/[id]", err)
   }
 }
 
@@ -62,6 +50,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await backendDeleteContract(token, id)
     return new NextResponse(null, { status: 204 })
   } catch (err) {
-    return handleError(err)
+    return handleApiError("api/contracts/[id]", err)
   }
 }
