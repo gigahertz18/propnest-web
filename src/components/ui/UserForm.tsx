@@ -6,7 +6,6 @@ import type { User, UserCreatePayload, UserUpdatePayload, UserRole } from "@/typ
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Select,
   SelectContent,
@@ -19,11 +18,12 @@ interface UserFormProps {
   user?: User
   onSubmit: (data: UserCreatePayload | UserUpdatePayload) => Promise<void>
   onCancel: () => void
+  onError?: (message: string) => void
 }
 
 const ROLES: UserRole[] = ["admin", "manager", "user"]
 
-export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
+export default function UserForm({ user, onSubmit, onCancel, onError }: UserFormProps) {
   const isEdit = !!user
 
   const [fullName, setFullName] = useState(user?.full_name ?? "")
@@ -32,12 +32,10 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
   const [password, setPassword] = useState("")
   const [role, setRole] = useState<UserRole>(user?.role ?? "user")
   const [isActive, setIsActive] = useState(user?.is_active ?? true)
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
     setLoading(true)
     try {
       if (isEdit) {
@@ -60,7 +58,7 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         })
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      onError?.(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -163,12 +161,6 @@ export default function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
           </Select>
         </div>
       </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <div className="flex gap-3 pt-2">
         <Button

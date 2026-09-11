@@ -9,7 +9,6 @@ import type {
 } from "@/types/property"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { propertiesApi } from "@/lib/api/properties"
 import {
   Select,
@@ -31,9 +30,10 @@ interface PropertyFormProps {
     pendingImages: File[]
   ) => Promise<void>
   onCancel: () => void
+  onError?: (message: string) => void
 }
 
-export function PropertyForm({ property, onSubmit, onCancel }: PropertyFormProps) {
+export function PropertyForm({ property, onSubmit, onCancel, onError }: PropertyFormProps) {
   const isEdit = !!property
 
   const [name, setName] = useState(property?.name ?? "")
@@ -45,7 +45,6 @@ export function PropertyForm({ property, onSubmit, onCancel }: PropertyFormProps
   const [existingImages, setExistingImages] = useState<UploadedImage[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [imageLoading, setImageLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -69,7 +68,6 @@ export function PropertyForm({ property, onSubmit, onCancel }: PropertyFormProps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
     setLoading(true)
     try {
       if (isEdit) {
@@ -84,7 +82,7 @@ export function PropertyForm({ property, onSubmit, onCancel }: PropertyFormProps
         await onSubmit({ name, address, description: description || null, status }, pendingFiles)
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      onError?.(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -92,12 +90,6 @@ export function PropertyForm({ property, onSubmit, onCancel }: PropertyFormProps
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="space-y-1.5">
         <Label htmlFor="prop_name">Property name</Label>
         <Input
